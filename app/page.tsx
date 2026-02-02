@@ -1,12 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import HandshakeModal from '@/components/HandshakeModal';
 
-export default function Home() {
-  const [selectedAgent, setSelectedAgent] = useState<{ id: number; name: string } | null>(null);
+interface Agent {
+  id: string | number;
+  codename?: string;
+  name?: string;
+  primary_directive?: string;
+  role?: string;
+  verified?: boolean;
+}
 
-  const featuredAgents = [
+export default function Home() {
+  const [selectedAgent, setSelectedAgent] = useState<{ id: number | string; name: string } | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fallback demo agents
+  const demoAgents: Agent[] = [
     {
       id: 1,
       name: "Unit-734",
@@ -27,6 +40,40 @@ export default function Home() {
     },
   ];
 
+  // Fetch agents from database
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.length > 0) {
+          // Map database fields to display format
+          const mappedAgents = result.data.map((agent: any) => ({
+            id: agent.id,
+            name: agent.codename,
+            role: agent.primary_directive,
+            verified: agent.verified ?? false, // Default to false if not set
+          }));
+          setAgents(mappedAgents);
+        } else {
+          // Use demo agents if database is empty
+          setAgents(demoAgents);
+        }
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        // Use demo agents on error
+        setAgents(demoAgents);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, []);
+
+  const featuredAgents = agents.length > 0 ? agents : demoAgents;
+
   const handleHireClick = (agent: { id: number; name: string }) => {
     setSelectedAgent(agent);
   };
@@ -44,9 +91,23 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-blue-400 tracking-wider font-mono">
               AGENTID COMMAND CENTER
             </h1>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-400 text-sm font-mono">ONLINE</span>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/protocol"
+                className="bg-green-600 hover:bg-green-500 text-black font-bold py-2 px-6 rounded-lg transition-all duration-300 font-mono tracking-wider hover:shadow-lg hover:shadow-green-500/50 border border-green-700 hover:border-green-400"
+              >
+                PROTOCOL
+              </Link>
+              <Link
+                href="/register"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 font-mono tracking-wider hover:shadow-lg hover:shadow-blue-500/50 border border-blue-700 hover:border-blue-400"
+              >
+                REGISTER AGENT
+              </Link>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-400 text-sm font-mono">ONLINE</span>
+              </div>
             </div>
           </div>
         </div>
@@ -80,7 +141,7 @@ export default function Home() {
                 SEARCHING FOR VERIFIED AGENTS...
               </h2>
               <p className="text-blue-400/60 text-sm font-mono">
-                SCANNING NETWORK • 3 AGENTS DETECTED
+                SCANNING NETWORK • {loading ? '...' : `${featuredAgents.length} AGENTS DETECTED`}
               </p>
             </div>
           </div>
@@ -118,33 +179,54 @@ export default function Home() {
 
                   {/* Agent Name */}
                   <h4 className="text-xl font-bold text-white mb-1 font-mono tracking-wide">
-                    {agent.name}
+                    {agent.name || agent.codename || 'Unknown Agent'}
                   </h4>
 
                   {/* Role */}
                   <p className="text-sm text-blue-300/80 mb-3 font-mono">
-                    {agent.role}
+                    {agent.role || 'Unspecified'}
                   </p>
 
-                  {/* Verified Badge */}
-                  <div className="flex items-center gap-2 mb-6 bg-green-950/50 px-3 py-1.5 rounded-full border border-green-700/50">
-                    <svg
-                      className="w-5 h-5 text-green-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-400 font-mono">VERIFIED</span>
-                  </div>
+                  {/* Verified Badge - Only show if verified is true */}
+                  {agent.verified && (
+                    <div className="flex items-center gap-2 mb-6 bg-green-950/50 px-3 py-1.5 rounded-full border border-green-700/50">
+                      <svg
+                        className="w-5 h-5 text-green-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-sm font-semibold text-green-400 font-mono">VERIFIED</span>
+                    </div>
+                  )}
+                  {!agent.verified && (
+                    <div className="flex items-center gap-2 mb-6 bg-yellow-950/50 px-3 py-1.5 rounded-full border border-yellow-700/50">
+                      <svg
+                        className="w-5 h-5 text-yellow-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-sm font-semibold text-yellow-400 font-mono">PENDING</span>
+                    </div>
+                  )}
 
                   {/* Hire Me Button */}
                   <button
-                    onClick={() => handleHireClick({ id: agent.id, name: agent.name })}
+                    onClick={() => handleHireClick({
+                      id: agent.id,
+                      name: agent.name || agent.codename || 'Unknown Agent'
+                    })}
                     className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 font-mono tracking-wider hover:shadow-lg hover:shadow-green-500/50 group-hover:animate-[button-glow_2s_ease-in-out_infinite]"
                   >
                     HIRE ME

@@ -113,3 +113,51 @@ body {
 .radar-ping {
   animation: radar-ping 2s ease-in-out infinite;
 }
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.6), 0 0 20px rgba(250, 204, 21, 0.4);
+}
+
+@keyframes credits-pulse {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(34, 211, 238, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(34, 211, 238, 1), 0 0 60px rgba(34, 211, 238, 0.7), 0 0 80px rgba(34, 211, 238, 0.4);
+  }
+}
+
+/* Custom scrollbar for protocol logs */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.5);
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.7);
+}
+
+/* Log type glow effects */
+.log-glow-green {
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.log-glow-yellow {
+  text-shadow: 0 0 10px rgba(234, 179, 8, 0.8), 0 0 20px rgba(234, 179, 8, 0.5);
+}
+
+.log-glow-red {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.log-glow-blue {
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.8), 0 0 20px rgba(96, 165, 250, 0.5);
+}
