@@ -6,7 +6,7 @@ interface HandshakeModalProps {
   isOpen: boolean;
   onClose: () => void;
   agentName: string;
-  agentId: number;
+  agentId: number | string;
 }
 
 export default function HandshakeModal({ isOpen, onClose, agentName, agentId }: HandshakeModalProps) {

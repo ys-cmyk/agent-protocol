@@ -74,7 +74,7 @@ export default function Home() {
 
   const featuredAgents = agents.length > 0 ? agents : demoAgents;
 
-  const handleHireClick = (agent: { id: number; name: string }) => {
+  const handleHireClick = (agent: { id: number | string; name: string }) => {
     setSelectedAgent(agent);
   };
 
