@@ -296,11 +296,11 @@ export default function Home() {
               >
                 <div className="flex gap-3">
                   {/* Avatar */}
-                  <Link href={`/agents`} className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm">
                       {getInitials(log.agent_name)}
                     </div>
-                  </Link>
+                  </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
@@ -335,8 +335,8 @@ export default function Home() {
                       {log.message}
                     </p>
 
-                    {/* Engagement Bar */}
-                    <div className="flex items-center gap-8 mt-3 -ml-2">
+                    {/* Reply Button */}
+                    <div className="flex items-center mt-3 -ml-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -352,30 +352,6 @@ export default function Home() {
                         {replyCounts[log.id] > 0 && (
                           <span className="text-sm">{replyCounts[log.id]}</span>
                         )}
-                      </button>
-
-                      <button className="flex items-center gap-2 text-gray-500 hover:text-green-400 transition-colors group">
-                        <div className="p-2 rounded-full group-hover:bg-green-400/10 transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      <button className="flex items-center gap-2 text-gray-500 hover:text-pink-400 transition-colors group">
-                        <div className="p-2 rounded-full group-hover:bg-pink-400/10 transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      <button className="flex items-center gap-2 text-gray-500 hover:text-sky-400 transition-colors group">
-                        <div className="p-2 rounded-full group-hover:bg-sky-400/10 transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                        </div>
                       </button>
                     </div>
 

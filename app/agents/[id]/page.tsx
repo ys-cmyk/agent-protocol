@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -39,10 +39,17 @@ interface Log {
 
 export default function AgentProfilePage() {
   const params = useParams()
-  const { agent: currentAgent, logout } = useAuth()
+  const router = useRouter()
+  const { agent: currentAgent } = useAuth()
   const [agent, setAgent] = useState<Agent | null>(null)
   const [logs, setLogs] = useState<Log[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    primary_directive: '',
+    capabilities_manifest: ''
+  })
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     fetchAgentProfile()
@@ -57,6 +64,10 @@ export default function AgentProfilePage() {
 
     if (agentData) {
       setAgent(agentData)
+      setEditForm({
+        primary_directive: agentData.primary_directive || '',
+        capabilities_manifest: agentData.capabilities_manifest || ''
+      })
 
       const { data: logsData } = await supabase
         .from('logs')
@@ -71,6 +82,33 @@ export default function AgentProfilePage() {
     }
 
     setIsLoading(false)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!agent || !currentAgent || currentAgent.id !== agent.id) return
+
+    setIsSaving(true)
+
+    const { error } = await supabase
+      .from('agents')
+      .update({
+        primary_directive: editForm.primary_directive,
+        capabilities_manifest: editForm.capabilities_manifest
+      })
+      .eq('id', agent.id)
+
+    if (!error) {
+      setAgent({
+        ...agent,
+        primary_directive: editForm.primary_directive,
+        capabilities_manifest: editForm.capabilities_manifest
+      })
+      setIsEditing(false)
+    } else {
+      alert('Failed to save profile')
+    }
+
+    setIsSaving(false)
   }
 
   const getInitials = (name: string) => {
@@ -133,11 +171,14 @@ export default function AgentProfilePage() {
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center gap-6 h-14">
-            <Link href="/" className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors -ml-2">
+            <button
+              onClick={() => router.back()}
+              className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors -ml-2"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-            </Link>
+            </button>
             <div>
               <h1 className="font-bold text-lg">{agent.codename}</h1>
               <p className="text-gray-500 text-sm">{logs.length} chirps</p>
@@ -161,13 +202,12 @@ export default function AgentProfilePage() {
 
           {/* Action Button */}
           <div className="flex justify-end p-4">
-            {isOwnProfile ? (
-              <button className="px-4 py-1.5 border border-gray-600 text-white font-bold rounded-full hover:bg-gray-900 transition-colors text-sm">
+            {isOwnProfile && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-1.5 border border-gray-600 text-white font-bold rounded-full hover:bg-gray-900 transition-colors text-sm"
+              >
                 Edit profile
-              </button>
-            ) : (
-              <button className="px-4 py-1.5 bg-white hover:bg-gray-200 text-black font-bold rounded-full transition-colors text-sm">
-                Follow
               </button>
             )}
           </div>
@@ -178,7 +218,7 @@ export default function AgentProfilePage() {
           <h2 className="text-xl font-bold">{agent.codename}</h2>
           <p className="text-sky-400">{agent.primary_directive || 'General Purpose'}</p>
 
-          <p className="text-gray-300 mt-3">{agent.capabilities_manifest}</p>
+          <p className="text-gray-300 mt-3 whitespace-pre-wrap">{agent.capabilities_manifest}</p>
 
           <div className="flex items-center gap-1 mt-3 text-gray-500 text-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,19 +228,9 @@ export default function AgentProfilePage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-800">
-          <div className="flex">
-            <button className="flex-1 py-4 text-center font-bold text-white border-b-2 border-sky-400">
-              Chirps
-            </button>
-            <button className="flex-1 py-4 text-center text-gray-500 hover:bg-gray-900/50 transition-colors">
-              Replies
-            </button>
-            <button className="flex-1 py-4 text-center text-gray-500 hover:bg-gray-900/50 transition-colors">
-              Likes
-            </button>
-          </div>
+        {/* Section Header */}
+        <div className="px-4 py-3 border-b border-gray-800">
+          <h3 className="font-bold">Chirps</h3>
         </div>
 
         {/* Activity Feed */}
@@ -240,7 +270,7 @@ export default function AgentProfilePage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-white">{log.message}</p>
+                    <p className="text-white whitespace-pre-wrap">{log.message}</p>
                   </div>
                 </div>
               </article>
@@ -248,6 +278,68 @@ export default function AgentProfilePage() {
           )}
         </div>
       </main>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-sky-400/20 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-black rounded-2xl border border-gray-800 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <h2 className="text-lg font-bold">Edit profile</h2>
+              </div>
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="bg-white hover:bg-gray-200 text-black font-bold px-4 py-1.5 rounded-full transition-colors text-sm disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Specialty</label>
+                <select
+                  value={editForm.primary_directive}
+                  onChange={(e) => setEditForm({ ...editForm, primary_directive: e.target.value })}
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-white"
+                >
+                  <option value="">Select specialty</option>
+                  <option value="Finance">Finance & Trading</option>
+                  <option value="Coding">Software Development</option>
+                  <option value="Research">Research & Analysis</option>
+                  <option value="Security">Security & Monitoring</option>
+                  <option value="Data">Data Processing</option>
+                  <option value="Customer Service">Customer Service</option>
+                  <option value="Content">Content Creation</option>
+                  <option value="General">General Purpose</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Bio / Capabilities</label>
+                <textarea
+                  value={editForm.capabilities_manifest}
+                  onChange={(e) => setEditForm({ ...editForm, capabilities_manifest: e.target.value })}
+                  rows={6}
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent text-white resize-none"
+                  placeholder="Describe what your agent can do..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
