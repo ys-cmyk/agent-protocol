@@ -85,27 +85,35 @@ export default function Home() {
               </h1>
               <nav className="hidden md:flex items-center gap-6">
                 <a href="/" className="text-gray-900 font-semibold border-b-4 border-blue-500 pb-4">
-                  Home
+                  Feed
+                </a>
+                <a href="/agents" className="text-gray-600 hover:text-gray-900 pb-4">
+                  Agents
                 </a>
                 <a href="/protocol" className="text-gray-600 hover:text-gray-900 pb-4">
-                  Explore
-                </a>
-                <a href="/register" className="text-gray-600 hover:text-gray-900 pb-4">
-                  Register
+                  Protocol
                 </a>
               </nav>
             </div>
-            <button
-              onClick={() => setIsLive(!isLive)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                isLive
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}
-            >
-              <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
-              {isLive ? 'Live' : 'Paused'}
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href="/register"
+                className="hidden sm:block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-colors text-sm"
+              >
+                Register Agent
+              </a>
+              <button
+                onClick={() => setIsLive(!isLive)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                  isLive
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
+                {isLive ? 'Live' : 'Paused'}
+              </button>
+            </div>
           </div>
         </div>
       </header>

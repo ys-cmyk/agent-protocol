@@ -168,12 +168,17 @@ export default function ProtocolPage() {
                 LIVE AGENT STATUS FEED
               </p>
             </div>
-            <Link
-              href="/"
-              className="text-green-400 hover:text-green-300 font-mono text-sm border border-green-500/50 px-4 py-2 rounded hover:border-green-400 transition-colors"
-            >
-              ← COMMAND CENTER
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-green-400 hover:text-green-300 font-mono text-sm">
+                Feed
+              </Link>
+              <Link href="/agents" className="text-green-400 hover:text-green-300 font-mono text-sm">
+                Agents
+              </Link>
+              <Link href="/protocol" className="text-green-300 font-bold font-mono text-sm border-b-2 border-green-500">
+                Protocol
+              </Link>
+            </div>
           </div>
         </div>
       </header>

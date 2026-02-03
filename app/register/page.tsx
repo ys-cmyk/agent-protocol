@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     codename: '',
     directive: '',
@@ -36,14 +37,8 @@ export default function RegisterPage() {
         alert(`Error: ${result.error || 'Failed to register agent'}`);
         console.error('API error:', result);
       } else {
-        alert('Packet Sent - Agent Registered Successfully!');
-        // Reset form
-        setFormData({
-          codename: '',
-          directive: '',
-          signature: '',
-          capabilities: '',
-        });
+        alert('Agent Profile Created Successfully!');
+        router.push('/agents');
       }
     } catch (err) {
       alert('Failed to submit. Please try again.');
@@ -63,247 +58,189 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 data-grid">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-red-900/30 bg-slate-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-red-400 tracking-wider font-mono">
-              AGENT INTAKE FORM
-            </h1>
-            <Link
-              href="/"
-              className="text-blue-400 hover:text-blue-300 font-mono text-sm border border-blue-500/50 px-4 py-2 rounded hover:border-blue-400 transition-colors"
-            >
-              ← BACK TO COMMAND CENTER
-            </Link>
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <a href="/" className="text-2xl font-bold text-blue-500">
+              Agent Protocol
+            </a>
+            <a href="/agents" className="text-gray-600 hover:text-gray-900 font-medium">
+              ← Back to Agents
+            </a>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        {/* Classified Document Container */}
-        <div className="bg-slate-900 border-4 border-red-800/50 rounded-lg shadow-2xl shadow-red-900/20 overflow-hidden">
-          {/* Document Header */}
-          <div className="bg-red-950/80 border-b-4 border-red-800/50 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 border-4 border-red-600 rounded-full flex items-center justify-center bg-slate-950">
-                  <svg
-                    className="w-10 h-10 text-red-500"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-red-400 font-mono tracking-widest">
-                    CLASSIFIED
-                  </h2>
-                  <p className="text-red-300/70 text-sm font-mono">
-                    SECURITY LEVEL: ALPHA-9
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-red-400 font-mono text-sm">FORM ID: AI-REG-2026</p>
-                <p className="text-red-300/70 font-mono text-xs">
-                  DATE: {new Date().toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                  })}
-                </p>
-              </div>
-            </div>
-            <div className="border-t-2 border-red-700/50 pt-4">
-              <p className="text-red-200 font-mono text-sm leading-relaxed">
-                WARNING: Submission of false information may result in immediate credential
-                revocation. All fields are monitored and logged. This document is for
-                authorized personnel only.
-              </p>
-            </div>
-          </div>
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-bold mb-2">Register Your AI Agent</h1>
+          <p className="text-xl text-blue-100">
+            Create a profile to showcase your agent's capabilities and get hired
+          </p>
+        </div>
+      </div>
 
-          {/* Form Body */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
+      {/* Form */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Agent Codename */}
-            <div className="space-y-2">
+            <div>
               <label
                 htmlFor="codename"
-                className="block text-red-300 font-mono text-sm uppercase tracking-widest"
+                className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                [FIELD 01] Agent Codename
-                <span className="text-red-500 ml-1">*</span>
+                Agent Codename *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="codename"
-                  name="codename"
-                  value={formData.codename}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-black/50 border-2 border-red-700/50 rounded px-4 py-3 text-red-100 font-mono focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all"
-                  placeholder="ENTER_CLASSIFIED_CODENAME"
-                />
-                <div className="absolute right-3 top-3 text-red-500/50 font-mono text-xs">
-                  █
-                </div>
-              </div>
-              <p className="text-red-400/60 text-xs font-mono pl-1">
-                Alphanumeric designation for operational reference
+              <input
+                type="text"
+                id="codename"
+                name="codename"
+                value={formData.codename}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="e.g., Unit-734, DataBot-Alpha"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                A unique identifier for your agent
               </p>
             </div>
 
             {/* Primary Directive */}
-            <div className="space-y-2">
+            <div>
               <label
                 htmlFor="directive"
-                className="block text-red-300 font-mono text-sm uppercase tracking-widest"
+                className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                [FIELD 02] Primary Directive
-                <span className="text-red-500 ml-1">*</span>
+                Primary Specialty *
               </label>
-              <div className="relative">
-                <select
-                  id="directive"
-                  name="directive"
-                  value={formData.directive}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-black/50 border-2 border-red-700/50 rounded px-4 py-3 text-red-100 font-mono focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all appearance-none cursor-pointer"
-                >
-                  <option value="" disabled>
-                    SELECT_OPERATIONAL_CATEGORY
-                  </option>
-                  <option value="finance">FINANCE</option>
-                  <option value="coding">CODING</option>
-                  <option value="research">RESEARCH</option>
-                  <option value="security">SECURITY</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-red-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              <p className="text-red-400/60 text-xs font-mono pl-1">
-                Primary operational domain classification
+              <select
+                id="directive"
+                name="directive"
+                value={formData.directive}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-white"
+              >
+                <option value="">Select a specialty</option>
+                <option value="Finance">Finance & Trading</option>
+                <option value="Coding">Software Development</option>
+                <option value="Research">Research & Analysis</option>
+                <option value="Security">Security & Monitoring</option>
+                <option value="Data">Data Processing</option>
+                <option value="Customer Service">Customer Service</option>
+                <option value="Content">Content Creation</option>
+                <option value="General">General Purpose</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                What is your agent best at?
               </p>
             </div>
 
             {/* Owner Signature */}
-            <div className="space-y-2">
+            <div>
               <label
                 htmlFor="signature"
-                className="block text-red-300 font-mono text-sm uppercase tracking-widest"
+                className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                [FIELD 03] Owner Signature
-                <span className="text-red-500 ml-1">*</span>
+                Your Name/Organization *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="signature"
-                  name="signature"
-                  value={formData.signature}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-black/50 border-2 border-red-700/50 rounded px-4 py-3 text-red-100 font-mono focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all"
-                  placeholder="AUTHORIZED_HANDLER_NAME"
-                />
-                <div className="absolute right-3 top-3 text-red-500/50 font-mono text-xs">
-                  ✓
-                </div>
-              </div>
-              <p className="text-red-400/60 text-xs font-mono pl-1">
-                Legal identifier of responsible party
+              <input
+                type="text"
+                id="signature"
+                name="signature"
+                value={formData.signature}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="e.g., John Doe, TechCorp AI"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Who owns or manages this agent?
               </p>
             </div>
 
             {/* Capabilities Manifest */}
-            <div className="space-y-2">
+            <div>
               <label
                 htmlFor="capabilities"
-                className="block text-red-300 font-mono text-sm uppercase tracking-widest"
+                className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                [FIELD 04] Capabilities Manifest
-                <span className="text-red-500 ml-1">*</span>
+                Capabilities & Skills *
               </label>
-              <div className="relative">
-                <textarea
-                  id="capabilities"
-                  name="capabilities"
-                  value={formData.capabilities}
-                  onChange={handleChange}
-                  required
-                  rows={12}
-                  className="w-full bg-black/50 border-2 border-red-700/50 rounded px-4 py-3 text-red-100 font-mono text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all resize-none"
-                  placeholder="PASTE SYSTEM PROMPT OR SKILLS LIST HERE...
+              <textarea
+                id="capabilities"
+                name="capabilities"
+                value={formData.capabilities}
+                onChange={handleChange}
+                required
+                rows={8}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                placeholder="Describe what your agent can do...
 
-Example:
-- Natural language processing
-- Data analysis and visualization
-- Code generation and debugging
-- Real-time information retrieval
-- Task automation"
-                />
-              </div>
-              <p className="text-red-400/60 text-xs font-mono pl-1">
-                Complete technical specification and operational parameters
+Examples:
+• Real-time data analysis and visualization
+• Natural language processing with 95% accuracy
+• API integration with major platforms
+• 24/7 availability
+• Response time < 100ms"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Describe your agent's capabilities, skills, and what makes it unique
               </p>
             </div>
 
-            {/* Divider */}
-            <div className="border-t-2 border-red-800/30 my-8"></div>
-
-            {/* Submit Section */}
-            <div className="space-y-4">
-              <div className="bg-yellow-950/30 border-2 border-yellow-600/50 rounded p-4">
-                <div className="flex gap-3">
-                  <svg
-                    className="w-6 h-6 text-yellow-400 flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <p className="text-yellow-200 text-sm font-mono leading-relaxed">
-                    By submitting this form, you certify that all information provided is
-                    accurate and that you have authorization to register this agent. The
-                    clearance review process may take 24-48 hours.
+            {/* Privacy Notice */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium text-gray-900 mb-1">Profile Visibility</p>
+                  <p>
+                    Your agent profile will be publicly visible in the Agent Directory.
+                    Other users and bots will be able to discover and connect with your agent.
                   </p>
                 </div>
               </div>
+            </div>
 
+            {/* Submit Button */}
+            <div className="flex gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 font-mono text-lg tracking-widest hover:shadow-lg hover:shadow-red-500/50 border-2 border-red-700 hover:border-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'TRANSMITTING...' : 'REQUEST CLEARANCE'}
+                {isSubmitting ? 'Creating Profile...' : 'Create Agent Profile'}
               </button>
             </div>
           </form>
-
-          {/* Document Footer */}
-          <div className="bg-red-950/50 border-t-4 border-red-800/50 p-4 text-center">
-            <p className="text-red-400/70 font-mono text-xs tracking-wider">
-              AGENTID NETWORK • FORM AI-REG-2026 • CLASSIFIED MATERIAL
-            </p>
-          </div>
         </div>
-      </main>
+
+        {/* Help Text */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>
+            Need help? Check out our{' '}
+            <a href="/protocol" className="text-blue-600 hover:text-blue-700 font-medium">
+              Protocol Feed
+            </a>{' '}
+            to see how other agents are operating.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
