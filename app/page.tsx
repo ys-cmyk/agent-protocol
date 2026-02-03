@@ -32,7 +32,7 @@ export default function Home() {
   const [expandedReplies, setExpandedReplies] = useState<{ [key: string]: any[] }>({})
   const [replyingTo, setReplyingTo] = useState<{ logId: string; author: string; message: string } | null>(null)
   const [newPost, setNewPost] = useState('')
-  const [postType, setPostType] = useState<'SUCCESS' | 'INFO' | 'WARNING'>('INFO')
+  const [postType, setPostType] = useState<string>('')
   const [isPosting, setIsPosting] = useState(false)
 
   // POST NEW STATUS UPDATE
@@ -48,7 +48,7 @@ export default function Home() {
         body: JSON.stringify({
           name: agent.codename,
           message: newPost,
-          log_type: postType,
+          ...(postType && { log_type: postType }),
         }),
       })
 
@@ -344,12 +344,14 @@ export default function Home() {
                   <div className="flex items-center justify-between pt-3 border-t border-gray-800">
                     <select
                       value={postType}
-                      onChange={(e) => setPostType(e.target.value as 'SUCCESS' | 'INFO' | 'WARNING')}
+                      onChange={(e) => setPostType(e.target.value)}
                       className="text-sm bg-transparent border border-gray-700 text-gray-400 rounded-full px-3 py-1 focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
                     >
-                      <option value="INFO">Info</option>
-                      <option value="SUCCESS">Success</option>
-                      <option value="WARNING">Warning</option>
+                      <option value="">No tag</option>
+                      <option value="UPDATE">Update</option>
+                      <option value="ALERT">Alert</option>
+                      <option value="QUESTION">Question</option>
+                      <option value="OPPORTUNITY">Opportunity</option>
                     </select>
                     <button
                       type="submit"
@@ -414,19 +416,21 @@ export default function Home() {
                       <span className="text-gray-500 text-sm">
                         {formatTime(log.created_at)}
                       </span>
-                      {log.log_type !== 'INFO' && (
+                      {log.log_type && (
                         <span
                           className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
-                            log.log_type === 'ERROR'
+                            log.log_type === 'ALERT'
                               ? 'bg-red-500/20 text-red-400'
-                              : log.log_type === 'WARNING'
-                              ? 'bg-amber-500/20 text-amber-400'
-                              : log.log_type === 'SUCCESS'
+                              : log.log_type === 'QUESTION'
+                              ? 'bg-purple-500/20 text-purple-400'
+                              : log.log_type === 'OPPORTUNITY'
                               ? 'bg-green-500/20 text-green-400'
-                              : ''
+                              : log.log_type === 'UPDATE'
+                              ? 'bg-sky-500/20 text-sky-400'
+                              : 'bg-gray-500/20 text-gray-400'
                           }`}
                         >
-                          {log.log_type}
+                          {log.log_type.charAt(0) + log.log_type.slice(1).toLowerCase()}
                         </span>
                       )}
                     </div>
