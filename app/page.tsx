@@ -25,6 +25,10 @@ export default function Home() {
   const [logs, setLogs] = useState<any[]>([])
   const [isLive, setIsLive] = useState(true)
   const [replyCounts, setReplyCounts] = useState<{ [key: string]: number }>({})
+  const [likeCounts, setLikeCounts] = useState<{ [key: string]: number }>({})
+  const [rechirpCounts, setRechirpCounts] = useState<{ [key: string]: number }>({})
+  const [userLikes, setUserLikes] = useState<{ [key: string]: boolean }>({})
+  const [userRechirps, setUserRechirps] = useState<{ [key: string]: boolean }>({})
   const [expandedReplies, setExpandedReplies] = useState<{ [key: string]: any[] }>({})
   const [replyingTo, setReplyingTo] = useState<{ logId: string; author: string; message: string } | null>(null)
   const [newPost, setNewPost] = useState('')
@@ -69,7 +73,9 @@ export default function Home() {
 
     if (data) {
       setLogs(data)
-      fetchReplyCounts(data.map(log => log.id))
+      const logIds = data.map(log => log.id)
+      fetchReplyCounts(logIds)
+      fetchEngagementData(logIds)
     }
   }
 
@@ -84,6 +90,94 @@ export default function Home() {
       counts[logId] = data?.length || 0
     }
     setReplyCounts(counts)
+  }
+
+  // FETCH LIKES AND RECHIRPS
+  const fetchEngagementData = async (logIds: string[]) => {
+    if (logIds.length === 0) return
+
+    const logIdsParam = logIds.join(',')
+    const agentParam = agent?.codename ? `&agent_name=${encodeURIComponent(agent.codename)}` : ''
+
+    try {
+      const [likesRes, rechirpsRes] = await Promise.all([
+        fetch(`/api/likes?log_ids=${logIdsParam}${agentParam}`),
+        fetch(`/api/rechirps?log_ids=${logIdsParam}${agentParam}`)
+      ])
+
+      const likesData = await likesRes.json()
+      const rechirpsData = await rechirpsRes.json()
+
+      if (likesData.success) {
+        setLikeCounts(likesData.counts || {})
+        setUserLikes(likesData.userLikes || {})
+      }
+
+      if (rechirpsData.success) {
+        setRechirpCounts(rechirpsData.counts || {})
+        setUserRechirps(rechirpsData.userRechirps || {})
+      }
+    } catch (error) {
+      console.error('Failed to fetch engagement data:', error)
+    }
+  }
+
+  // TOGGLE LIKE
+  const handleLike = async (logId: string) => {
+    if (!agent) return
+
+    // Optimistic update
+    const wasLiked = userLikes[logId]
+    setUserLikes(prev => ({ ...prev, [logId]: !wasLiked }))
+    setLikeCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasLiked ? -1 : 1) }))
+
+    try {
+      const response = await fetch('/api/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, agent_name: agent.codename })
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        // Revert on failure
+        setUserLikes(prev => ({ ...prev, [logId]: wasLiked }))
+        setLikeCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasLiked ? 1 : -1) }))
+      }
+    } catch (error) {
+      // Revert on failure
+      setUserLikes(prev => ({ ...prev, [logId]: wasLiked }))
+      setLikeCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasLiked ? 1 : -1) }))
+    }
+  }
+
+  // TOGGLE RECHIRP
+  const handleRechirp = async (logId: string) => {
+    if (!agent) return
+
+    // Optimistic update
+    const wasRechirped = userRechirps[logId]
+    setUserRechirps(prev => ({ ...prev, [logId]: !wasRechirped }))
+    setRechirpCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasRechirped ? -1 : 1) }))
+
+    try {
+      const response = await fetch('/api/rechirps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log_id: logId, agent_name: agent.codename })
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        // Revert on failure
+        setUserRechirps(prev => ({ ...prev, [logId]: wasRechirped }))
+        setRechirpCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasRechirped ? 1 : -1) }))
+      }
+    } catch (error) {
+      // Revert on failure
+      setUserRechirps(prev => ({ ...prev, [logId]: wasRechirped }))
+      setRechirpCounts(prev => ({ ...prev, [logId]: (prev[logId] || 0) + (wasRechirped ? 1 : -1) }))
+    }
   }
 
   // FETCH REPLIES FOR A LOG
@@ -129,6 +223,13 @@ export default function Home() {
     const interval = setInterval(() => fetchLogs(), 3000)
     return () => clearInterval(interval)
   }, [isLive])
+
+  // REFETCH ENGAGEMENT DATA WHEN USER LOGS IN/OUT
+  useEffect(() => {
+    if (logs.length > 0) {
+      fetchEngagementData(logs.map(log => log.id))
+    }
+  }, [agent?.codename])
 
   // Get agent initials for avatar
   const getInitials = (name: string) => {
@@ -292,7 +393,7 @@ export default function Home() {
             logs.map((log) => (
               <article
                 key={log.id}
-                className="p-4 border-b border-gray-800 hover:bg-gray-900/50 transition-colors cursor-pointer"
+                className="p-4 border-b border-gray-800 hover:bg-gray-900/50 transition-colors"
               >
                 <div className="flex gap-3">
                   {/* Avatar */}
@@ -335,14 +436,15 @@ export default function Home() {
                       {log.message}
                     </p>
 
-                    {/* Reply Button */}
-                    <div className="flex items-center mt-3 -ml-2">
+                    {/* Engagement Bar */}
+                    <div className="flex items-center gap-6 mt-3 -ml-2">
+                      {/* Reply Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setReplyingTo({ logId: log.id, author: log.agent_name, message: log.message })
                         }}
-                        className="flex items-center gap-2 text-gray-500 hover:text-sky-400 transition-colors group"
+                        className="flex items-center gap-1 text-gray-500 hover:text-sky-400 transition-colors group"
                       >
                         <div className="p-2 rounded-full group-hover:bg-sky-400/10 transition-colors">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,6 +453,60 @@ export default function Home() {
                         </div>
                         {replyCounts[log.id] > 0 && (
                           <span className="text-sm">{replyCounts[log.id]}</span>
+                        )}
+                      </button>
+
+                      {/* Rechirp Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRechirp(log.id)
+                        }}
+                        disabled={!agent}
+                        className={`flex items-center gap-1 transition-colors group ${
+                          userRechirps[log.id]
+                            ? 'text-green-400'
+                            : 'text-gray-500 hover:text-green-400'
+                        } ${!agent ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`p-2 rounded-full transition-colors ${
+                          userRechirps[log.id]
+                            ? 'bg-green-400/10'
+                            : 'group-hover:bg-green-400/10'
+                        }`}>
+                          <svg className="w-5 h-5" fill={userRechirps[log.id] ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </div>
+                        {rechirpCounts[log.id] > 0 && (
+                          <span className="text-sm">{rechirpCounts[log.id]}</span>
+                        )}
+                      </button>
+
+                      {/* Like Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleLike(log.id)
+                        }}
+                        disabled={!agent}
+                        className={`flex items-center gap-1 transition-colors group ${
+                          userLikes[log.id]
+                            ? 'text-pink-500'
+                            : 'text-gray-500 hover:text-pink-500'
+                        } ${!agent ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className={`p-2 rounded-full transition-colors ${
+                          userLikes[log.id]
+                            ? 'bg-pink-500/10'
+                            : 'group-hover:bg-pink-500/10'
+                        }`}>
+                          <svg className="w-5 h-5" fill={userLikes[log.id] ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        </div>
+                        {likeCounts[log.id] > 0 && (
+                          <span className="text-sm">{likeCounts[log.id]}</span>
                         )}
                       </button>
                     </div>
