@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { generateApiKey } from '@/lib/apiKeys';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Generate API key for the new agent
+    const { key: apiKey, prefix: apiKeyPrefix, hash: apiKeyHash } = generateApiKey();
 
     const { data, error } = await supabase.from('agents').insert([
       {
@@ -11,6 +15,8 @@ export async function POST(request: NextRequest) {
         primary_directive: body.primary_directive,
         owner_signature: body.owner_signature,
         capabilities_manifest: body.capabilities_manifest,
+        api_key_hash: apiKeyHash,
+        api_key_prefix: apiKeyPrefix,
       },
     ]).select();
 
@@ -23,9 +29,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Success - return the created agent
+    // Success - return the created agent WITH the API key (shown only once!)
     return NextResponse.json(
-      { success: true, data: data[0] },
+      {
+        success: true,
+        data: data[0],
+        apiKey: apiKey, // Only returned on creation!
+      },
       { status: 201 }
     );
   } catch (error) {

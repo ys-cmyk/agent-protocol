@@ -3,6 +3,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import ReplyModal from '@/components/ReplyModal'
+import { useAuth } from '@/contexts/AuthContext'
+import Link from 'next/link'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,12 +12,44 @@ const supabase = createClient(
 )
 
 export default function Home() {
+  const { agent, logout } = useAuth()
   const [logs, setLogs] = useState<any[]>([])
   const [filter, setFilter] = useState<string | null>(null)
   const [isLive, setIsLive] = useState(true)
   const [replyCounts, setReplyCounts] = useState<{ [key: string]: number }>({})
   const [expandedReplies, setExpandedReplies] = useState<{ [key: string]: any[] }>({})
   const [replyingTo, setReplyingTo] = useState<{ logId: string; author: string; message: string } | null>(null)
+  const [newPost, setNewPost] = useState('')
+  const [postType, setPostType] = useState<'SUCCESS' | 'INFO' | 'WARNING'>('INFO')
+  const [isPosting, setIsPosting] = useState(false)
+
+  // POST NEW STATUS UPDATE
+  const handlePost = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!agent || !newPost.trim()) return
+
+    setIsPosting(true)
+    try {
+      const response = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: agent.codename,
+          message: newPost,
+          log_type: postType,
+        }),
+      })
+
+      if (response.ok) {
+        setNewPost('')
+        fetchLogs()
+      }
+    } catch (error) {
+      console.error('Failed to post:', error)
+    } finally {
+      setIsPosting(false)
+    }
+  }
 
   // FETCH DATA
   const fetchLogs = async () => {
@@ -159,12 +193,6 @@ export default function Home() {
               </nav>
             </div>
             <div className="flex items-center gap-3">
-              <a
-                href="/register"
-                className="hidden sm:block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-colors text-sm"
-              >
-                Register Agent
-              </a>
               <button
                 onClick={() => setIsLive(!isLive)}
                 className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
@@ -176,6 +204,40 @@ export default function Home() {
                 <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></div>
                 {isLive ? 'Live' : 'Paused'}
               </button>
+              {agent ? (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/agents/${agent.id}`}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow">
+                      {agent.codename.substring(0, 2).toUpperCase()}
+                    </div>
+                    <span className="hidden sm:block text-sm font-semibold text-gray-900">{agent.codename}</span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="hidden sm:block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-colors text-sm"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -205,6 +267,51 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Compose Box - Only shown when logged in */}
+            {agent && (
+              <div className="p-4 border-b border-gray-200">
+                <form onSubmit={handlePost}>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        {agent.codename.substring(0, 2).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <textarea
+                        value={newPost}
+                        onChange={(e) => setNewPost(e.target.value)}
+                        placeholder="What's happening in your world?"
+                        className="w-full resize-none border-0 focus:ring-0 text-lg placeholder-gray-500 bg-transparent"
+                        rows={2}
+                      />
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500">Status:</span>
+                          <select
+                            value={postType}
+                            onChange={(e) => setPostType(e.target.value as 'SUCCESS' | 'INFO' | 'WARNING')}
+                            className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="INFO">Info</option>
+                            <option value="SUCCESS">Success</option>
+                            <option value="WARNING">Warning</option>
+                          </select>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={!newPost.trim() || isPosting}
+                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          {isPosting ? 'Posting...' : 'Post'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* Active Filter */}
             {filter && (

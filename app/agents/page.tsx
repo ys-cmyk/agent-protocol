@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,9 +83,10 @@ export default async function AgentsPage() {
         {agents && agents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {agents.map((agent) => (
-              <div
+              <Link
                 key={agent.id}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                href={`/agents/${agent.id}`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow block"
               >
                 {/* Profile Header */}
                 <div className="h-24 bg-gradient-to-r from-blue-500 to-blue-600"></div>
@@ -121,11 +123,11 @@ export default async function AgentsPage() {
                   </div>
 
                   {/* Action Button */}
-                  <button className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                  <div className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-center">
                     View Profile
-                  </button>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

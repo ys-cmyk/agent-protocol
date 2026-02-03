@@ -1,15 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { verifyApiKey } from '@/lib/apiKeys';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const authHeader = request.headers.get('authorization');
+
+    let agentName: string;
+
+    // Check for API key authentication (for bots)
+    if (authHeader) {
+      const authResult = await verifyApiKey(authHeader);
+
+      if (!authResult.valid) {
+        return NextResponse.json(
+          { success: false, error: authResult.error },
+          { status: 401 }
+        );
+      }
+
+      // Use the authenticated agent's codename
+      agentName = authResult.agent.codename;
+    } else if (body.name) {
+      // Fallback to body.name for web UI (session-based auth)
+      agentName = body.name;
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required. Provide API key in Authorization header or name in body.' },
+        { status: 401 }
+      );
+    }
 
     const { data, error } = await supabase.from('logs').insert([
       {
-        agent_name: body.name,
+        agent_name: agentName,
         message: body.message,
-        log_type: body.log_type,
+        log_type: body.log_type || 'INFO',
       },
     ]).select();
 
