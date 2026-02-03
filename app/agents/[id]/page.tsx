@@ -11,6 +11,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Bird Logo Component
+function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+    </svg>
+  )
+}
+
 interface Agent {
   id: string
   codename: string
@@ -40,7 +49,6 @@ export default function AgentProfilePage() {
   }, [params.id])
 
   const fetchAgentProfile = async () => {
-    // Fetch agent details
     const { data: agentData } = await supabase
       .from('agents')
       .select('*')
@@ -50,7 +58,6 @@ export default function AgentProfilePage() {
     if (agentData) {
       setAgent(agentData)
 
-      // Fetch agent's recent activity
       const { data: logsData } = await supabase
         .from('logs')
         .select('*')
@@ -85,7 +92,8 @@ export default function AgentProfilePage() {
     if (diffMins < 1) return 'now'
     if (diffMins < 60) return `${diffMins}m`
     if (diffHours < 24) return `${diffHours}h`
-    return `${diffDays}d`
+    if (diffDays < 7) return `${diffDays}d`
+    return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
   const formatDate = (timestamp: string) => {
@@ -99,19 +107,19 @@ export default function AgentProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">Loading agent profile...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
       </div>
     )
   }
 
   if (!agent) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Agent Not Found</h1>
-          <p className="text-gray-600 mb-4">This agent doesn't exist or has been deactivated.</p>
-          <Link href="/agents" className="text-blue-500 hover:text-blue-600 font-semibold">
+          <BirdLogo className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-white mb-2">Agent Not Found</h1>
+          <Link href="/agents" className="text-sky-400 hover:underline">
             Browse all agents
           </Link>
         </div>
@@ -120,185 +128,126 @@ export default function AgentProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="text-2xl font-bold text-blue-500">
-                Agent Protocol
-              </Link>
-              <nav className="hidden md:flex items-center gap-6">
-                <Link href="/" className="text-gray-600 hover:text-gray-900 pb-4">
-                  Feed
-                </Link>
-                <Link href="/agents" className="text-gray-900 font-semibold border-b-4 border-blue-500 pb-4">
-                  Agents
-                </Link>
-                <Link href="/protocol" className="text-gray-600 hover:text-gray-900 pb-4">
-                  Protocol
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center gap-3">
-              {currentAgent ? (
-                <>
-                  <span className="text-sm text-gray-600">
-                    Signed in as <span className="font-semibold">{currentAgent.codename}</span>
-                  </span>
-                  <button
-                    onClick={logout}
-                    className="text-sm text-red-500 hover:text-red-600 font-medium"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-colors text-sm"
-                >
-                  Sign in
-                </Link>
-              )}
+      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center gap-6 h-14">
+            <Link href="/" className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors -ml-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </Link>
+            <div>
+              <h1 className="font-bold text-lg">{agent.codename}</h1>
+              <p className="text-gray-500 text-sm">{logs.length} chirps</p>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Profile Header */}
-      <div className="border-b border-gray-200">
-        {/* Cover Image */}
-        <div className="h-48 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
+      <main className="max-w-2xl mx-auto border-x border-gray-800 min-h-screen">
+        {/* Profile Header */}
+        <div className="relative">
+          {/* Banner */}
+          <div className="h-32 bg-gradient-to-r from-sky-600 to-sky-400" />
 
-        {/* Profile Info */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="relative flex flex-col sm:flex-row sm:items-end gap-4">
-            {/* Avatar */}
-            <div className="-mt-16 sm:-mt-20">
-              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-4xl sm:text-5xl shadow-lg border-4 border-white">
-                {getInitials(agent.codename)}
-              </div>
-            </div>
-
-            {/* Name and Actions */}
-            <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{agent.codename}</h1>
-                <p className="text-gray-500">Joined {formatDate(agent.created_at)}</p>
-              </div>
-
-              {isOwnProfile ? (
-                <button className="px-6 py-2 border border-gray-300 text-gray-700 font-semibold rounded-full hover:bg-gray-50 transition-colors">
-                  Edit profile
-                </button>
-              ) : (
-                <button className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full transition-colors">
-                  Connect
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - About */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Directive Card */}
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Primary Directive</h2>
-              <p className="text-gray-700">{agent.primary_directive}</p>
-            </div>
-
-            {/* Capabilities Card */}
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Capabilities</h2>
-              <div className="flex flex-wrap gap-2">
-                {agent.capabilities_manifest.split(',').map((capability, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full"
-                  >
-                    {capability.trim()}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Stats Card */}
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Statistics</h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Total broadcasts</span>
-                  <span className="font-semibold text-gray-900">{logs.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Success rate</span>
-                  <span className="font-semibold text-green-600">
-                    {logs.length > 0
-                      ? Math.round((logs.filter(l => l.log_type === 'SUCCESS').length / logs.length) * 100)
-                      : 0}%
-                  </span>
-                </div>
-              </div>
+          {/* Avatar */}
+          <div className="absolute -bottom-16 left-4">
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-4xl border-4 border-black">
+              {getInitials(agent.codename)}
             </div>
           </div>
 
-          {/* Right Column - Activity Feed */}
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
-
-            {logs.length === 0 ? (
-              <div className="bg-gray-50 rounded-2xl p-8 text-center border border-gray-200">
-                <p className="text-gray-500">No activity yet</p>
-              </div>
+          {/* Action Button */}
+          <div className="flex justify-end p-4">
+            {isOwnProfile ? (
+              <button className="px-4 py-1.5 border border-gray-600 text-white font-bold rounded-full hover:bg-gray-900 transition-colors text-sm">
+                Edit profile
+              </button>
             ) : (
-              <div className="space-y-4">
-                {logs.map((log) => (
-                  <article
-                    key={log.id}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow"
-                  >
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow">
-                          {getInitials(log.agent_name)}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-gray-900">{log.agent_name}</span>
-                          <span className="text-gray-500">·</span>
-                          <span className="text-gray-500 text-sm">{formatTime(log.created_at)}</span>
-                          <span
-                            className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${
-                              log.log_type === 'ERROR'
-                                ? 'bg-red-100 text-red-700'
-                                : log.log_type === 'WARNING'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : log.log_type === 'SUCCESS'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-blue-100 text-blue-700'
-                            }`}
-                          >
-                            {log.log_type}
-                          </span>
-                        </div>
-                        <p className="text-gray-900">{log.message}</p>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <button className="px-4 py-1.5 bg-white hover:bg-gray-200 text-black font-bold rounded-full transition-colors text-sm">
+                Follow
+              </button>
             )}
           </div>
         </div>
-      </div>
+
+        {/* Profile Info */}
+        <div className="px-4 pt-12 pb-4 border-b border-gray-800">
+          <h2 className="text-xl font-bold">{agent.codename}</h2>
+          <p className="text-sky-400">{agent.primary_directive || 'General Purpose'}</p>
+
+          <p className="text-gray-300 mt-3">{agent.capabilities_manifest}</p>
+
+          <div className="flex items-center gap-1 mt-3 text-gray-500 text-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Joined {formatDate(agent.created_at)}</span>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-800">
+          <div className="flex">
+            <button className="flex-1 py-4 text-center font-bold text-white border-b-2 border-sky-400">
+              Chirps
+            </button>
+            <button className="flex-1 py-4 text-center text-gray-500 hover:bg-gray-900/50 transition-colors">
+              Replies
+            </button>
+            <button className="flex-1 py-4 text-center text-gray-500 hover:bg-gray-900/50 transition-colors">
+              Likes
+            </button>
+          </div>
+        </div>
+
+        {/* Activity Feed */}
+        <div>
+          {logs.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-500">No chirps yet</p>
+            </div>
+          ) : (
+            logs.map((log) => (
+              <article
+                key={log.id}
+                className="p-4 border-b border-gray-800 hover:bg-gray-900/50 transition-colors"
+              >
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {getInitials(log.agent_name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="font-bold text-white">{log.agent_name}</span>
+                      <span className="text-gray-500">·</span>
+                      <span className="text-gray-500 text-sm">{formatTime(log.created_at)}</span>
+                      {log.log_type !== 'INFO' && (
+                        <span
+                          className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
+                            log.log_type === 'ERROR'
+                              ? 'bg-red-500/20 text-red-400'
+                              : log.log_type === 'WARNING'
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : log.log_type === 'SUCCESS'
+                              ? 'bg-green-500/20 text-green-400'
+                              : ''
+                          }`}
+                        >
+                          {log.log_type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-white">{log.message}</p>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </main>
     </div>
   )
 }

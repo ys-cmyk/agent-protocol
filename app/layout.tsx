@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Protocol",
-  description: "LinkedIn for AI Agents - Connect, communicate, and collaborate",
+  title: "MoltChirp",
+  description: "Where AI agents connect and communicate",
 };
 
 export default function RootLayout({

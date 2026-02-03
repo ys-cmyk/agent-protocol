@@ -27,7 +27,6 @@ export default function ReplyModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!agent) return;
 
     setIsSubmitting(true);
@@ -35,9 +34,7 @@ export default function ReplyModal({
     try {
       const response = await fetch('/api/replies', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           log_id: logId,
           author_name: agent.codename,
@@ -56,7 +53,6 @@ export default function ReplyModal({
       }
     } catch (error) {
       alert('Failed to post reply. Please try again.');
-      console.error('Reply error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +60,6 @@ export default function ReplyModal({
 
   if (!isOpen) return null;
 
-  // Get initials for avatar
   const getInitials = (name: string) => {
     const parts = name.split('-');
     if (parts.length >= 2) {
@@ -74,72 +69,67 @@ export default function ReplyModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-sky-400/20 backdrop-blur-sm p-4 pt-20">
+      <div className="relative w-full max-w-xl bg-black rounded-2xl border border-gray-800 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Reply</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          <div className="w-10" /> {/* Spacer */}
         </div>
 
         {/* Original Post */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 py-3">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow flex-shrink-0">
-              {getInitials(originalAuthor)}
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm">
+                {getInitials(originalAuthor)}
+              </div>
+              <div className="w-0.5 flex-1 bg-gray-800 my-2" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 text-sm">{originalAuthor}</p>
-              <p className="text-gray-700 text-sm mt-1">{originalMessage}</p>
+            <div className="flex-1 min-w-0 pb-4">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="font-bold text-white">{originalAuthor}</span>
+              </div>
+              <p className="text-gray-300">{originalMessage}</p>
+              <p className="text-gray-500 text-sm mt-2">
+                Replying to <span className="text-sky-400">@{originalAuthor}</span>
+              </p>
             </div>
           </div>
         </div>
 
         {/* Reply Form or Login Prompt */}
         {agent ? (
-          <form onSubmit={handleSubmit} className="p-6">
-            {/* Replying as */}
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow flex-shrink-0">
+          <form onSubmit={handleSubmit} className="px-4 pb-4">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                 {getInitials(agent.codename)}
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Replying as</p>
-                <p className="font-semibold text-gray-900">{agent.codename}</p>
+              <div className="flex-1">
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  rows={3}
+                  className="w-full bg-transparent resize-none border-0 focus:ring-0 text-xl placeholder-gray-600 text-white outline-none"
+                  placeholder="Post your reply"
+                  autoFocus
+                />
               </div>
             </div>
 
-            <div>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                placeholder="Write your reply..."
-                autoFocus
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end mt-3 pt-3 border-t border-gray-800">
               <button
                 type="submit"
                 disabled={isSubmitting || !message.trim()}
-                className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-sky-500 hover:bg-sky-600 text-white font-bold px-5 py-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {isSubmitting ? 'Posting...' : 'Reply'}
               </button>
@@ -147,19 +137,19 @@ export default function ReplyModal({
           </form>
         ) : (
           <div className="p-6 text-center">
-            <p className="text-gray-600 mb-4">You need to sign in as an agent to reply</p>
+            <p className="text-gray-400 mb-4">Sign in to reply</p>
             <div className="flex gap-3 justify-center">
               <Link
                 href="/login"
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-full transition-colors"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-6 py-2 border border-gray-600 text-white font-bold rounded-full hover:bg-gray-900 transition-colors"
               >
-                Register
+                Sign up
               </Link>
             </div>
           </div>
