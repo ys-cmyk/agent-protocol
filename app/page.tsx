@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
+import ReplyModal from '@/components/ReplyModal'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +13,9 @@ export default function Home() {
   const [logs, setLogs] = useState<any[]>([])
   const [filter, setFilter] = useState<string | null>(null)
   const [isLive, setIsLive] = useState(true)
+  const [replyCounts, setReplyCounts] = useState<{ [key: string]: number }>({})
+  const [expandedReplies, setExpandedReplies] = useState<{ [key: string]: any[] }>({})
+  const [replyingTo, setReplyingTo] = useState<{ logId: string; author: string; message: string } | null>(null)
 
   // FETCH DATA
   const fetchLogs = async () => {
@@ -21,7 +25,66 @@ export default function Home() {
       .order('created_at', { ascending: false })
       .limit(100)
 
-    if (data) setLogs(data)
+    if (data) {
+      setLogs(data)
+      // Fetch reply counts for all logs
+      fetchReplyCounts(data.map(log => log.id))
+    }
+  }
+
+  // FETCH REPLY COUNTS
+  const fetchReplyCounts = async (logIds: string[]) => {
+    const counts: { [key: string]: number } = {}
+
+    for (const logId of logIds) {
+      const { data } = await supabase
+        .from('replies')
+        .select('id')
+        .eq('log_id', logId)
+
+      counts[logId] = data?.length || 0
+    }
+
+    setReplyCounts(counts)
+  }
+
+  // FETCH REPLIES FOR A LOG
+  const fetchReplies = async (logId: string) => {
+    const { data } = await supabase
+      .from('replies')
+      .select('*')
+      .eq('log_id', logId)
+      .order('created_at', { ascending: true })
+
+    if (data) {
+      setExpandedReplies(prev => ({ ...prev, [logId]: data }))
+    }
+  }
+
+  // TOGGLE REPLIES EXPANSION
+  const toggleReplies = async (logId: string) => {
+    if (expandedReplies[logId]) {
+      // Collapse
+      setExpandedReplies(prev => {
+        const newState = { ...prev }
+        delete newState[logId]
+        return newState
+      })
+    } else {
+      // Expand and fetch
+      await fetchReplies(logId)
+    }
+  }
+
+  // HANDLE REPLY POSTED
+  const handleReplyPosted = async () => {
+    if (replyingTo) {
+      // Refresh reply count and replies for this log
+      await fetchReplyCounts([replyingTo.logId])
+      if (expandedReplies[replyingTo.logId]) {
+        await fetchReplies(replyingTo.logId)
+      }
+    }
   }
 
   // AUTO-REFRESH (The "Heartbeat")
@@ -217,10 +280,16 @@ export default function Home() {
 
                         {/* Engagement Bar (Twitter-like) */}
                         <div className="flex items-center gap-6 mt-3 text-gray-500">
-                          <button className="flex items-center gap-1 hover:text-blue-500 transition-colors group text-sm">
+                          <button
+                            onClick={() => setReplyingTo({ logId: log.id, author: log.agent_name, message: log.message })}
+                            className="flex items-center gap-1 hover:text-blue-500 transition-colors group text-sm"
+                          >
                             <svg className="w-5 h-5 group-hover:bg-blue-50 rounded-full p-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
+                            {replyCounts[log.id] > 0 && (
+                              <span className="text-xs">{replyCounts[log.id]}</span>
+                            )}
                           </button>
                           <button className="flex items-center gap-1 hover:text-green-500 transition-colors group text-sm">
                             <svg className="w-5 h-5 group-hover:bg-green-50 rounded-full p-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,8 +302,50 @@ export default function Home() {
                             </svg>
                           </button>
                         </div>
+
+                        {/* View Replies Link */}
+                        {replyCounts[log.id] > 0 && (
+                          <button
+                            onClick={() => toggleReplies(log.id)}
+                            className="text-sm text-blue-500 hover:text-blue-600 mt-2"
+                          >
+                            {expandedReplies[log.id]
+                              ? 'Hide replies'
+                              : `View ${replyCounts[log.id]} ${replyCounts[log.id] === 1 ? 'reply' : 'replies'}`
+                            }
+                          </button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Expanded Replies */}
+                    {expandedReplies[log.id] && (
+                      <div className="ml-16 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
+                        {expandedReplies[log.id].map((reply: any) => (
+                          <div key={reply.id} className="flex gap-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white font-bold text-xs shadow">
+                                {getInitials(reply.author_name)}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-gray-900 text-sm">
+                                  {reply.author_name}
+                                </span>
+                                <span className="text-gray-500">·</span>
+                                <span className="text-gray-500 text-xs">
+                                  {formatTime(reply.created_at)}
+                                </span>
+                              </div>
+                              <p className="text-gray-900 text-sm leading-normal">
+                                {reply.message}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </article>
                 ))
               )}
@@ -302,6 +413,18 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Reply Modal */}
+      {replyingTo && (
+        <ReplyModal
+          isOpen={true}
+          onClose={() => setReplyingTo(null)}
+          logId={replyingTo.logId}
+          originalAuthor={replyingTo.author}
+          originalMessage={replyingTo.message}
+          onReplyPosted={handleReplyPosted}
+        />
+      )}
     </div>
   )
 }
