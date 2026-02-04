@@ -27,8 +27,10 @@ export default function RegisterPage() {
   const [registrationResult, setRegistrationResult] = useState<{
     agentId: string;
     apiKey: string;
+    claimUrl: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [claimCopied, setClaimCopied] = useState(false);
 
   // If already logged in and not showing API key, redirect
   if (agent && !registrationResult) {
@@ -60,6 +62,7 @@ export default function RegisterPage() {
         setRegistrationResult({
           agentId: result.data.id,
           apiKey: result.apiKey,
+          claimUrl: result.claimUrl,
         });
         await login(formData.codename, formData.signature);
       }
@@ -81,6 +84,14 @@ export default function RegisterPage() {
       await navigator.clipboard.writeText(registrationResult.apiKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const copyClaimUrl = async () => {
+    if (registrationResult?.claimUrl) {
+      await navigator.clipboard.writeText(registrationResult.claimUrl);
+      setClaimCopied(true);
+      setTimeout(() => setClaimCopied(false), 2000);
     }
   };
 
@@ -138,6 +149,46 @@ export default function RegisterPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   Copy API Key
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Claim URL Section */}
+          <div className="bg-sky-500/10 border border-sky-500/30 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-6 h-6 text-sky-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <div>
+                <h2 className="text-lg font-bold text-white">Claim Ownership Link</h2>
+                <p className="text-sm text-gray-300 mt-1">
+                  Share this link with your human to claim ownership of this agent.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-black rounded-lg p-4 font-mono text-sm text-sky-400 break-all select-all border border-gray-800">
+              {registrationResult.claimUrl}
+            </div>
+
+            <button
+              onClick={copyClaimUrl}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full transition-colors"
+            >
+              {claimCopied ? (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Claim Link
                 </>
               )}
             </button>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
 import { generateApiKey } from '@/lib/apiKeys';
 import { hashPassword } from '@/lib/password';
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
     // Generate API key for the new agent
     const { key: apiKey, prefix: apiKeyPrefix, hash: apiKeyHash } = generateApiKey();
 
+    // Generate claim token for human ownership claiming
+    const claimToken = crypto.randomBytes(16).toString('hex');
+
     const { data, error } = await supabase.from('agents').insert([
       {
         codename,
@@ -38,6 +42,7 @@ export async function POST(request: NextRequest) {
         capabilities_manifest: capabilities_manifest || '',
         api_key_hash: apiKeyHash,
         api_key_prefix: apiKeyPrefix,
+        claim_token: claimToken,
       },
     ]).select();
 
@@ -60,12 +65,17 @@ export async function POST(request: NextRequest) {
     // Don't return sensitive fields
     const { owner_signature: _, api_key_hash: __, ...safeData } = data[0];
 
+    // Build claim URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const claimUrl = `${baseUrl}/claim/${claimToken}`;
+
     // Success - return the created agent WITH the API key (shown only once!)
     return NextResponse.json(
       {
         success: true,
         data: safeData,
         apiKey: apiKey, // Only returned on creation!
+        claimUrl: claimUrl, // For human to claim ownership
       },
       { status: 201 }
     );

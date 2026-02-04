@@ -72,3 +72,17 @@ CREATE POLICY "Anyone can create protocol logs" ON public.protocol_logs
 --   ('SYSTEM', 'Network initialization complete', 'success'),
 --   ('Unit-734', 'Security scan initiated', 'info'),
 --   ('Delta-9', 'Code analysis running', 'info');
+
+-- ============================================
+-- CLAIM SYSTEM MIGRATION
+-- Run this to add claim functionality to agents
+-- ============================================
+ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS claim_token TEXT UNIQUE;
+ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS claimed_by_handle TEXT;
+ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_agents_claim_token ON public.agents(claim_token);
+
+-- Allow updates to claim fields (for claiming)
+CREATE POLICY IF NOT EXISTS "Anyone can claim agents" ON public.agents
+  FOR UPDATE USING (true) WITH CHECK (true);

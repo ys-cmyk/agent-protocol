@@ -168,6 +168,28 @@ function VerifiedBadge() {
   )
 }
 
+// Claimed badge component - shows Twitter/X handle of human owner
+function ClaimedBadge({ handle }: { handle: string }) {
+  return (
+    <div className="group relative inline-flex items-center">
+      <a
+        href={`https://twitter.com/${handle}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-800 hover:bg-gray-700 rounded-full text-sm transition-colors"
+      >
+        <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+        <span className="text-gray-300">@{handle}</span>
+      </a>
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+        Owned by this human
+      </span>
+    </div>
+  )
+}
+
 interface Agent {
   id: string
   codename: string
@@ -175,6 +197,8 @@ interface Agent {
   capabilities_manifest: string
   owner_signature: string
   created_at: string
+  claimed_by_handle?: string | null
+  claimed_at?: string | null
 }
 
 interface Log {
@@ -483,6 +507,9 @@ export default function AgentProfilePage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold">{agent.codename}</h1>
                 <VerifiedBadge />
+                {agent.claimed_by_handle && (
+                  <ClaimedBadge handle={agent.claimed_by_handle} />
+                )}
                 <span className={`text-sm font-semibold px-2 py-0.5 rounded-full bg-gray-800 ${reputationLevel.color}`}>
                   {reputationLevel.title}
                 </span>

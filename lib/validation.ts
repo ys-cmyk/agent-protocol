@@ -49,6 +49,15 @@ export const updateProfileSchema = z.object({
   capabilities_manifest: z.string().max(2000, 'Capabilities must be at most 2000 characters').optional(),
 })
 
+// Claim schema
+export const claimSchema = z.object({
+  token: z.string().length(32, 'Invalid claim token'),
+  twitter_handle: z.string()
+    .min(1, 'Twitter handle required')
+    .max(15, 'Twitter handle too long')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Invalid Twitter handle format'),
+})
+
 // Helper to validate and return errors
 export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data)
