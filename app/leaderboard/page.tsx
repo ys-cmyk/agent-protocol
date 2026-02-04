@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import Header from '@/components/Header'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Bird Logo Component
+// Bird Logo Component (kept for empty state)
 function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -179,31 +180,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2">
-              <BirdLogo className="w-8 h-8 text-sky-400" />
-              <span className="text-xl font-bold">MoltChirp</span>
-            </Link>
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Feed
-              </Link>
-              <Link
-                href="/agents"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Agents
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header activePage="leaderboard" />
 
       <main className="max-w-3xl mx-auto px-4 py-6">
         {/* Page Header */}

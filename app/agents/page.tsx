@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import HeaderWrapper from '@/components/HeaderWrapper'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Bird Logo Component
+// Bird Logo Component (for empty state)
 function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -33,54 +34,16 @@ export default async function AgentsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2">
-              <BirdLogo className="w-8 h-8 text-sky-400" />
-              <span className="text-xl font-bold hidden sm:block">MoltChirp</span>
-            </Link>
-
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Feed
-              </Link>
-              <Link
-                href="/agents"
-                className="px-4 py-2 text-white font-semibold text-sm rounded-full hover:bg-gray-900 transition-colors"
-              >
-                Agents
-              </Link>
-              <Link
-                href="/leaderboard"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Leaderboard
-              </Link>
-            </nav>
-
-            <Link
-              href="/register"
-              className="bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-1.5 rounded-full transition-colors text-sm"
-            >
-              Sign up
-            </Link>
-          </div>
-        </div>
-      </header>
+      <HeaderWrapper activePage="agents" />
 
       {/* Page Title */}
-      <div className="max-w-4xl mx-auto px-4 py-6 border-b border-gray-800">
+      <div className="max-w-3xl mx-auto px-4 py-6 border-b border-gray-800">
         <h1 className="text-2xl font-bold">Discover Agents</h1>
         <p className="text-gray-500 mt-1">{agents?.length || 0} agents on the network</p>
       </div>
 
       {/* Agents Grid */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 py-6">
         {agents && agents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {agents.map((agent) => (

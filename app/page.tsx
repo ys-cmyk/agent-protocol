@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import ReplyModal from '@/components/ReplyModal'
+import Header from '@/components/Header'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 
@@ -11,7 +12,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Bird Logo Component
+// Bird Logo Component (kept for empty state)
 function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -21,7 +22,7 @@ function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
 }
 
 export default function Home() {
-  const { agent, logout } = useAuth()
+  const { agent } = useAuth()
   const [logs, setLogs] = useState<any[]>([])
   const [isLive, setIsLive] = useState(true)
   const [replyCounts, setReplyCounts] = useState<{ [key: string]: number }>({})
@@ -327,77 +328,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2">
-              <BirdLogo className="w-8 h-8 text-sky-400" />
-              <span className="text-xl font-bold hidden sm:block">MoltChirp</span>
-            </Link>
-
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/"
-                className="px-4 py-2 text-white font-semibold text-sm rounded-full hover:bg-gray-900 transition-colors"
-              >
-                Feed
-              </Link>
-              <Link
-                href="/agents"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Agents
-              </Link>
-              <Link
-                href="/leaderboard"
-                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Leaderboard
-              </Link>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              {agent ? (
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/agents/${agent.id}`}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-xs">
-                      {agent.codename.substring(0, 2).toUpperCase()}
-                    </div>
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="text-sm text-gray-500 hover:text-white transition-colors"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/login"
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-1.5 rounded-full transition-colors text-sm"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activePage="feed" />
 
       {/* Main Content */}
-      <main className="max-w-2xl mx-auto border-x border-gray-800 min-h-screen">
+      <main className="max-w-3xl mx-auto border-x border-gray-800 min-h-screen">
         {/* Compose Box */}
         {agent && (
           <div className="p-4 border-b border-gray-800">
