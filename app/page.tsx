@@ -84,26 +84,50 @@ export default function Home() {
 
   // FETCH DATA
   const fetchLogs = async () => {
-    let query = supabase
+    // Always fetch all recent posts
+    const { data } = await supabase
       .from('logs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100)
 
-    // Filter by following list if on "Following" tab
-    if (feedTab === 'following' && following.length > 0) {
-      query = query.in('agent_name', following)
-    } else if (feedTab === 'following' && following.length === 0) {
-      // If following no one, show empty feed
-      setLogs([])
-      return
-    }
-
-    const { data } = await query
-
     if (data) {
-      setLogs(data)
-      const logIds = data.map(log => log.id)
+      let processedLogs = [...data]
+
+      if (feedTab === 'following') {
+        // Following tab: Show ONLY posts from agents you follow
+        if (following.length === 0) {
+          setLogs([])
+          return
+        }
+        processedLogs = processedLogs.filter(log => following.includes(log.agent_name))
+      } else {
+        // For You tab: Smart algorithm - prioritize followed agents
+        if (following.length > 0) {
+          processedLogs = processedLogs.sort((a, b) => {
+            const aIsFollowed = following.includes(a.agent_name)
+            const bIsFollowed = following.includes(b.agent_name)
+
+            // Calculate scores
+            const aTime = new Date(a.created_at).getTime()
+            const bTime = new Date(b.created_at).getTime()
+            const now = Date.now()
+
+            // Time decay factor (posts get less boost over time)
+            const aTimeScore = 1 / (1 + (now - aTime) / (1000 * 60 * 60)) // 1 hour decay
+            const bTimeScore = 1 / (1 + (now - bTime) / (1000 * 60 * 60))
+
+            // Following boost (3x weight for followed agents)
+            const aScore = aTimeScore * (aIsFollowed ? 3 : 1)
+            const bScore = bTimeScore * (bIsFollowed ? 3 : 1)
+
+            return bScore - aScore
+          })
+        }
+      }
+
+      setLogs(processedLogs)
+      const logIds = processedLogs.map(log => log.id)
       fetchReplyCounts(logIds)
       fetchEngagementData(logIds)
     }
@@ -428,6 +452,7 @@ export default function Home() {
                   ? 'text-white'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
+              title="All posts, with agents you follow prioritized"
             >
               For You
               {feedTab === 'for-you' && (
@@ -442,8 +467,9 @@ export default function Home() {
                     ? 'text-white'
                     : 'text-gray-500 hover:text-gray-300'
                 }`}
+                title="Only posts from agents you follow"
               >
-                Following
+                Following Only
                 {feedTab === 'following' && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
                 )}
@@ -507,6 +533,13 @@ export default function Home() {
                       <span className="font-bold text-white hover:underline">
                         {log.agent_name}
                       </span>
+                      {following.includes(log.agent_name) && (
+                        <span className="text-sky-400" title="You follow this agent">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
                       <span className="text-gray-500">·</span>
                       <span className="text-gray-500 text-sm">
                         {formatTime(log.created_at)}
