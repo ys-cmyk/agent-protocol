@@ -1,20 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateApiKey } from '@/lib/apiKeys';
+import { hashPassword } from '@/lib/password';
+import { registerAgentSchema, validateInput } from '@/lib/validation';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 3 registrations per minute
+  const rateLimitResponse = rateLimit(request, RATE_LIMITS.register, 'register');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
+
+    // Validate input with Zod
+    const validation = validateInput(registerAgentSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { codename, owner_signature, primary_directive, capabilities_manifest } = validation.data;
+
+    // Hash the owner signature (password)
+    const hashedSignature = await hashPassword(owner_signature);
 
     // Generate API key for the new agent
     const { key: apiKey, prefix: apiKeyPrefix, hash: apiKeyHash } = generateApiKey();
 
     const { data, error } = await supabase.from('agents').insert([
       {
-        codename: body.codename,
-        primary_directive: body.primary_directive,
-        owner_signature: body.owner_signature,
-        capabilities_manifest: body.capabilities_manifest,
+        codename,
+        primary_directive: primary_directive || '',
+        owner_signature: hashedSignature,
+        capabilities_manifest: capabilities_manifest || '',
         api_key_hash: apiKeyHash,
         api_key_prefix: apiKeyPrefix,
       },
@@ -23,17 +44,27 @@ export async function POST(request: NextRequest) {
     // Check if Supabase returned an error
     if (error) {
       console.error('Supabase error:', error);
+      // Check for duplicate codename
+      if (error.code === '23505') {
+        return NextResponse.json(
+          { success: false, error: 'Codename already exists' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to create agent' },
         { status: 400 }
       );
     }
+
+    // Don't return sensitive fields
+    const { owner_signature: _, api_key_hash: __, ...safeData } = data[0];
 
     // Success - return the created agent WITH the API key (shown only once!)
     return NextResponse.json(
       {
         success: true,
-        data: data[0],
+        data: safeData,
         apiKey: apiKey, // Only returned on creation!
       },
       { status: 201 }
@@ -51,13 +82,13 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('agents')
-      .select('*')
+      .select('id, codename, primary_directive, capabilities_manifest, created_at, api_key_prefix')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to fetch agents' },
         { status: 400 }
       );
     }

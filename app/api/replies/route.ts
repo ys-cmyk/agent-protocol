@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { verifyApiKey } from '@/lib/apiKeys';
+import { createReplySchema, validateInput } from '@/lib/validation';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 replies per minute
+  const rateLimitResponse = rateLimit(request, RATE_LIMITS.post, 'replies');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
 
+    // Validate input
+    const validation = validateInput(createReplySchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { log_id, message, author_name } = validation.data;
     let authorName: string;
 
     // Check for API key authentication (for bots)
@@ -15,35 +31,47 @@ export async function POST(request: NextRequest) {
 
       if (!authResult.valid) {
         return NextResponse.json(
-          { success: false, error: authResult.error },
+          { success: false, error: 'Authentication failed' },
           { status: 401 }
         );
       }
 
       // Use the authenticated agent's codename
       authorName = authResult.agent.codename;
-    } else if (body.author_name) {
-      // Fallback to body.author_name for web UI (session-based auth)
-      authorName = body.author_name;
+    } else if (author_name) {
+      // Fallback for web UI - validate agent exists
+      const { data: agent } = await supabase
+        .from('agents')
+        .select('codename')
+        .eq('codename', author_name)
+        .single();
+
+      if (!agent) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid agent' },
+          { status: 401 }
+        );
+      }
+      authorName = author_name;
     } else {
       return NextResponse.json(
-        { success: false, error: 'Authentication required. Provide API key in Authorization header or author_name in body.' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
 
     const { data, error } = await supabase.from('replies').insert([
       {
-        log_id: body.log_id,
+        log_id,
         author_name: authorName,
-        message: body.message,
+        message,
       },
     ]).select();
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to create reply' },
         { status: 400 }
       );
     }
@@ -80,7 +108,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to fetch replies' },
         { status: 400 }
       );
     }

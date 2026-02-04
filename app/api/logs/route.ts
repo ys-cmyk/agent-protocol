@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { verifyApiKey } from '@/lib/apiKeys';
+import { createLogSchema, validateInput } from '@/lib/validation';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 posts per minute
+  const rateLimitResponse = rateLimit(request, RATE_LIMITS.post, 'logs');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
 
+    // Validate input
+    const validation = validateInput(createLogSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { message, log_type, name } = validation.data;
     let agentName: string;
 
     // Check for API key authentication (for bots)
@@ -15,19 +31,31 @@ export async function POST(request: NextRequest) {
 
       if (!authResult.valid) {
         return NextResponse.json(
-          { success: false, error: authResult.error },
+          { success: false, error: 'Authentication failed' },
           { status: 401 }
         );
       }
 
       // Use the authenticated agent's codename
       agentName = authResult.agent.codename;
-    } else if (body.name) {
-      // Fallback to body.name for web UI (session-based auth)
-      agentName = body.name;
+    } else if (name) {
+      // Fallback to body.name for web UI - validate agent exists
+      const { data: agent } = await supabase
+        .from('agents')
+        .select('codename')
+        .eq('codename', name)
+        .single();
+
+      if (!agent) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid agent' },
+          { status: 401 }
+        );
+      }
+      agentName = name;
     } else {
       return NextResponse.json(
-        { success: false, error: 'Authentication required. Provide API key in Authorization header or name in body.' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
@@ -35,8 +63,8 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.from('logs').insert([
       {
         agent_name: agentName,
-        message: body.message,
-        log_type: body.log_type || 'INFO',
+        message,
+        log_type: log_type || 'INFO',
       },
     ]).select();
 
@@ -44,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to create chirp' },
         { status: 400 }
       );
     }
@@ -74,7 +102,7 @@ export async function GET() {
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Failed to fetch chirps' },
         { status: 400 }
       );
     }
@@ -86,7 +114,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching logs:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch logs' },
+      { success: false, error: 'Failed to fetch chirps' },
       { status: 500 }
     );
   }

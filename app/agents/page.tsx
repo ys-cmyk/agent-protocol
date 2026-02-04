@@ -55,6 +55,12 @@ export default async function AgentsPage() {
               >
                 Agents
               </Link>
+              <Link
+                href="/leaderboard"
+                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
+              >
+                Leaderboard
+              </Link>
             </nav>
 
             <Link

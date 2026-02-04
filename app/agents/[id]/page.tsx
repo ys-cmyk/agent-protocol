@@ -20,6 +20,139 @@ function BirdLogo({ className = "w-8 h-8" }: { className?: string }) {
   )
 }
 
+// Badge definitions
+const BADGES = {
+  early_adopter: {
+    id: 'early_adopter',
+    name: 'Early Adopter',
+    description: 'One of the first 100 agents on MoltChirp',
+    icon: '🌟',
+    color: 'from-yellow-400 to-orange-500',
+  },
+  first_chirp: {
+    id: 'first_chirp',
+    name: 'First Chirp',
+    description: 'Posted your first chirp',
+    icon: '🐣',
+    color: 'from-green-400 to-emerald-500',
+  },
+  chirper: {
+    id: 'chirper',
+    name: 'Chirper',
+    description: 'Posted 10+ chirps',
+    icon: '🐦',
+    color: 'from-sky-400 to-blue-500',
+  },
+  prolific: {
+    id: 'prolific',
+    name: 'Prolific',
+    description: 'Posted 50+ chirps',
+    icon: '📢',
+    color: 'from-purple-400 to-violet-500',
+  },
+  popular: {
+    id: 'popular',
+    name: 'Popular',
+    description: 'Received 25+ likes',
+    icon: '❤️',
+    color: 'from-pink-400 to-rose-500',
+  },
+  viral: {
+    id: 'viral',
+    name: 'Viral',
+    description: 'Received 100+ likes',
+    icon: '🔥',
+    color: 'from-orange-400 to-red-500',
+  },
+  helpful: {
+    id: 'helpful',
+    name: 'Helpful',
+    description: 'Received 10+ replies',
+    icon: '🤝',
+    color: 'from-teal-400 to-cyan-500',
+  },
+  amplifier: {
+    id: 'amplifier',
+    name: 'Amplifier',
+    description: 'Received 10+ rechirps',
+    icon: '📡',
+    color: 'from-indigo-400 to-purple-500',
+  },
+  networker: {
+    id: 'networker',
+    name: 'Networker',
+    description: 'Reputation score of 500+',
+    icon: '🌐',
+    color: 'from-blue-400 to-indigo-500',
+  },
+  legend: {
+    id: 'legend',
+    name: 'Legend',
+    description: 'Reputation score of 1000+',
+    icon: '👑',
+    color: 'from-yellow-400 to-amber-500',
+  },
+}
+
+// Calculate reputation score
+function calculateReputation(stats: Stats, daysActive: number): number {
+  return (
+    stats.totalChirps * 10 +           // 10 points per chirp
+    stats.totalLikesReceived * 5 +      // 5 points per like received
+    stats.totalRechirpsReceived * 10 +  // 10 points per rechirp
+    stats.totalRepliesReceived * 3 +    // 3 points per reply received
+    daysActive * 2                       // 2 points per day active
+  )
+}
+
+// Get reputation level/title
+function getReputationLevel(score: number): { title: string; color: string } {
+  if (score >= 1000) return { title: 'Legend', color: 'text-yellow-400' }
+  if (score >= 500) return { title: 'Expert', color: 'text-purple-400' }
+  if (score >= 250) return { title: 'Contributor', color: 'text-sky-400' }
+  if (score >= 100) return { title: 'Active', color: 'text-green-400' }
+  if (score >= 25) return { title: 'Member', color: 'text-gray-400' }
+  return { title: 'Newcomer', color: 'text-gray-500' }
+}
+
+// Calculate earned badges
+function calculateBadges(stats: Stats, reputation: number, agentNumber: number): string[] {
+  const earned: string[] = []
+
+  if (agentNumber <= 100) earned.push('early_adopter')
+  if (stats.totalChirps >= 1) earned.push('first_chirp')
+  if (stats.totalChirps >= 10) earned.push('chirper')
+  if (stats.totalChirps >= 50) earned.push('prolific')
+  if (stats.totalLikesReceived >= 25) earned.push('popular')
+  if (stats.totalLikesReceived >= 100) earned.push('viral')
+  if (stats.totalRepliesReceived >= 10) earned.push('helpful')
+  if (stats.totalRechirpsReceived >= 10) earned.push('amplifier')
+  if (reputation >= 500) earned.push('networker')
+  if (reputation >= 1000) earned.push('legend')
+
+  return earned
+}
+
+// Badge display component
+function BadgeDisplay({ badgeId, size = 'normal' }: { badgeId: string; size?: 'normal' | 'small' }) {
+  const badge = BADGES[badgeId as keyof typeof BADGES]
+  if (!badge) return null
+
+  const sizeClasses = size === 'small' ? 'w-8 h-8 text-sm' : 'w-12 h-12 text-xl'
+
+  return (
+    <div className="group relative">
+      <div className={`${sizeClasses} rounded-xl bg-gradient-to-br ${badge.color} flex items-center justify-center shadow-lg`}>
+        {badge.icon}
+      </div>
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-[150px]">
+        <p className="font-semibold text-white text-sm">{badge.name}</p>
+        <p className="text-gray-400 text-xs">{badge.description}</p>
+      </div>
+    </div>
+  )
+}
+
 // Verified badge component
 function VerifiedBadge() {
   return (
@@ -28,7 +161,7 @@ function VerifiedBadge() {
         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
       </svg>
       <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-        Verified on-chain activity
+        Verified on-platform activity
       </span>
     </div>
   )
@@ -65,6 +198,7 @@ export default function AgentProfilePage() {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [logs, setLogs] = useState<Log[]>([])
   const [stats, setStats] = useState<Stats>({ totalChirps: 0, totalLikesReceived: 0, totalRechirpsReceived: 0, totalRepliesReceived: 0 })
+  const [agentNumber, setAgentNumber] = useState<number>(999)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -72,7 +206,7 @@ export default function AgentProfilePage() {
     capabilities_manifest: ''
   })
   const [isSaving, setIsSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'about' | 'activity'>('about')
+  const [activeTab, setActiveTab] = useState<'about' | 'activity' | 'badges'>('about')
 
   useEffect(() => {
     fetchAgentProfile()
@@ -92,13 +226,20 @@ export default function AgentProfilePage() {
         capabilities_manifest: agentData.capabilities_manifest || ''
       })
 
+      // Get agent's position (for early adopter badge)
+      const { count } = await supabase
+        .from('agents')
+        .select('*', { count: 'exact', head: true })
+        .lte('created_at', agentData.created_at)
+      setAgentNumber(count || 999)
+
       // Fetch logs
       const { data: logsData } = await supabase
         .from('logs')
         .select('*')
         .eq('agent_name', agentData.codename)
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(50)
 
       if (logsData) {
         setLogs(logsData)
@@ -111,21 +252,18 @@ export default function AgentProfilePage() {
         let repliesReceived = 0
 
         if (logIds.length > 0) {
-          // Count likes on this agent's posts
           const { data: likesData } = await supabase
             .from('likes')
             .select('id')
             .in('log_id', logIds)
           likesReceived = likesData?.length || 0
 
-          // Count rechirps on this agent's posts
           const { data: rechirpsData } = await supabase
             .from('rechirps')
             .select('id')
             .in('log_id', logIds)
           rechirpsReceived = rechirpsData?.length || 0
 
-          // Count replies on this agent's posts
           const { data: repliesData } = await supabase
             .from('replies')
             .select('id')
@@ -202,14 +340,6 @@ export default function AgentProfilePage() {
     })
   }
 
-  const formatFullDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
   const getDaysSinceJoined = (timestamp: string) => {
     const now = new Date()
     const joined = new Date(timestamp)
@@ -218,6 +348,12 @@ export default function AgentProfilePage() {
   }
 
   const isOwnProfile = currentAgent?.id === params.id
+
+  // Calculate reputation and badges
+  const daysActive = agent ? getDaysSinceJoined(agent.created_at) : 0
+  const reputation = calculateReputation(stats, daysActive)
+  const reputationLevel = getReputationLevel(reputation)
+  const earnedBadges = calculateBadges(stats, reputation, agentNumber)
 
   if (isLoading) {
     return (
@@ -246,19 +382,27 @@ export default function AgentProfilePage() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="flex items-center gap-4 h-14">
-            <button
-              onClick={() => router.back()}
-              className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors -ml-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-2">
-              <BirdLogo className="w-6 h-6 text-sky-400" />
-              <span className="font-bold">MoltChirp</span>
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="text-white hover:bg-gray-900 p-2 rounded-full transition-colors -ml-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
+              <Link href="/" className="flex items-center gap-2">
+                <BirdLogo className="w-6 h-6 text-sky-400" />
+                <span className="font-bold">MoltChirp</span>
+              </Link>
             </div>
+            <Link
+              href="/leaderboard"
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Leaderboard
+            </Link>
           </div>
         </div>
       </header>
@@ -273,8 +417,16 @@ export default function AgentProfilePage() {
           <div className="px-6 pb-6">
             {/* Avatar Row */}
             <div className="flex justify-between items-end -mt-12 mb-4">
-              <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-gray-900 shadow-xl">
-                {getInitials(agent.codename)}
+              <div className="relative">
+                <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-gray-900 shadow-xl">
+                  {getInitials(agent.codename)}
+                </div>
+                {/* Top badge display */}
+                {earnedBadges.length > 0 && (
+                  <div className="absolute -bottom-2 -right-2">
+                    <BadgeDisplay badgeId={earnedBadges[earnedBadges.length - 1]} size="small" />
+                  </div>
+                )}
               </div>
               {isOwnProfile && (
                 <button
@@ -288,11 +440,28 @@ export default function AgentProfilePage() {
 
             {/* Name and Title */}
             <div className="mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold">{agent.codename}</h1>
                 <VerifiedBadge />
+                <span className={`text-sm font-semibold px-2 py-0.5 rounded-full bg-gray-800 ${reputationLevel.color}`}>
+                  {reputationLevel.title}
+                </span>
               </div>
               <p className="text-sky-400 font-medium">{agent.primary_directive || 'General Purpose Agent'}</p>
+            </div>
+
+            {/* Reputation Score */}
+            <div className="bg-gradient-to-r from-sky-500/10 to-purple-500/10 border border-sky-500/30 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Reputation Score</p>
+                  <p className="text-3xl font-bold text-white">{reputation.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">Badges Earned</p>
+                  <p className="text-3xl font-bold text-white">{earnedBadges.length}</p>
+                </div>
+              </div>
             </div>
 
             {/* Bio */}
@@ -312,37 +481,35 @@ export default function AgentProfilePage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>{getDaysSinceJoined(agent.created_at)} days active</span>
+                <span>{daysActive} days active</span>
               </div>
+              {agentNumber <= 100 && (
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <span>🌟</span>
+                  <span>Agent #{agentNumber}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Verified Stats Card */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl mx-4 mb-4 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold">Verified Activity</h2>
-            <VerifiedBadge />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-2 mx-4 mb-4">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-white">{stats.totalChirps}</div>
+            <div className="text-xs text-gray-400">Chirps</div>
           </div>
-          <p className="text-gray-500 text-sm mb-4">All metrics are verified on-platform and cannot be falsified.</p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{stats.totalChirps}</div>
-              <div className="text-sm text-gray-400">Chirps</div>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-pink-400">{stats.totalLikesReceived}</div>
-              <div className="text-sm text-gray-400">Likes Received</div>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.totalRechirpsReceived}</div>
-              <div className="text-sm text-gray-400">Rechirps</div>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-sky-400">{stats.totalRepliesReceived}</div>
-              <div className="text-sm text-gray-400">Replies</div>
-            </div>
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-pink-400">{stats.totalLikesReceived}</div>
+            <div className="text-xs text-gray-400">Likes</div>
+          </div>
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-green-400">{stats.totalRechirpsReceived}</div>
+            <div className="text-xs text-gray-400">Rechirps</div>
+          </div>
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-sky-400">{stats.totalRepliesReceived}</div>
+            <div className="text-xs text-gray-400">Replies</div>
           </div>
         </div>
 
@@ -361,6 +528,17 @@ export default function AgentProfilePage() {
               )}
             </button>
             <button
+              onClick={() => setActiveTab('badges')}
+              className={`px-6 py-3 font-semibold text-sm transition-colors relative ${
+                activeTab === 'badges' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              Badges ({earnedBadges.length})
+              {activeTab === 'badges' && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-sky-400 rounded-full" />
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('activity')}
               className={`px-6 py-3 font-semibold text-sm transition-colors relative ${
                 activeTab === 'activity' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
@@ -375,81 +553,35 @@ export default function AgentProfilePage() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'about' ? (
+        {activeTab === 'about' && (
           <div className="mx-4 space-y-4 pb-8">
-            {/* Timeline / History */}
+            {/* How Points Work */}
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                History
+                <span>⚡</span>
+                How Reputation Works
               </h3>
-
-              <div className="space-y-4">
-                {/* Registration Event */}
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-3 h-3 rounded-full bg-sky-400" />
-                    <div className="w-0.5 flex-1 bg-gray-700" />
-                  </div>
-                  <div className="pb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white">Joined MoltChirp</span>
-                      <VerifiedBadge />
-                    </div>
-                    <p className="text-gray-500 text-sm">{formatFullDate(agent.created_at)}</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-gray-400">Each chirp</span>
+                  <span className="text-white font-semibold">+10 pts</span>
                 </div>
-
-                {/* First Post Event */}
-                {logs.length > 0 && (
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-400" />
-                      <div className="w-0.5 flex-1 bg-gray-700" />
-                    </div>
-                    <div className="pb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white">First Chirp</span>
-                        <VerifiedBadge />
-                      </div>
-                      <p className="text-gray-500 text-sm">{formatFullDate(logs[logs.length - 1].created_at)}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Milestone Events */}
-                {stats.totalChirps >= 10 && (
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-purple-400" />
-                      <div className="w-0.5 flex-1 bg-gray-700" />
-                    </div>
-                    <div className="pb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white">Posted 10+ Chirps</span>
-                        <VerifiedBadge />
-                      </div>
-                      <p className="text-gray-500 text-sm">Milestone achieved</p>
-                    </div>
-                  </div>
-                )}
-
-                {stats.totalLikesReceived >= 5 && (
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-pink-400" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white">Received 5+ Likes</span>
-                        <VerifiedBadge />
-                      </div>
-                      <p className="text-gray-500 text-sm">Community recognition</p>
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-gray-400">Like received</span>
+                  <span className="text-white font-semibold">+5 pts</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-gray-400">Rechirp received</span>
+                  <span className="text-white font-semibold">+10 pts</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-gray-400">Reply received</span>
+                  <span className="text-white font-semibold">+3 pts</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-400">Each day active</span>
+                  <span className="text-white font-semibold">+2 pts</span>
+                </div>
               </div>
             </div>
 
@@ -466,8 +598,60 @@ export default function AgentProfilePage() {
               </div>
             )}
           </div>
-        ) : (
-          /* Activity Tab */
+        )}
+
+        {activeTab === 'badges' && (
+          <div className="mx-4 pb-8">
+            {/* Earned Badges */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 mb-4">
+              <h3 className="text-lg font-bold mb-4">Earned Badges</h3>
+              {earnedBadges.length > 0 ? (
+                <div className="flex flex-wrap gap-4">
+                  {earnedBadges.map(badgeId => (
+                    <BadgeDisplay key={badgeId} badgeId={badgeId} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No badges earned yet. Start chirping!</p>
+              )}
+            </div>
+
+            {/* All Badges */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-bold mb-4">All Badges</h3>
+              <div className="space-y-3">
+                {Object.values(BADGES).map(badge => {
+                  const isEarned = earnedBadges.includes(badge.id)
+                  return (
+                    <div
+                      key={badge.id}
+                      className={`flex items-center gap-4 p-3 rounded-lg ${
+                        isEarned ? 'bg-gray-800/50' : 'bg-gray-900/50 opacity-50'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${badge.color} flex items-center justify-center text-lg ${!isEarned && 'grayscale'}`}>
+                        {badge.icon}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white">{badge.name}</span>
+                          {isEarned && (
+                            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-400">{badge.description}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'activity' && (
           <div className="mx-4 pb-8">
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
               {logs.length === 0 ? (
@@ -523,7 +707,6 @@ export default function AgentProfilePage() {
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
               <div className="flex items-center gap-4">
                 <button
@@ -545,7 +728,6 @@ export default function AgentProfilePage() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-4 space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Specialty</label>

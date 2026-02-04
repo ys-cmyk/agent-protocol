@@ -79,16 +79,21 @@ export default function Home() {
     }
   }
 
-  // FETCH REPLY COUNTS
+  // FETCH REPLY COUNTS - batched query
   const fetchReplyCounts = async (logIds: string[]) => {
+    if (logIds.length === 0) return
+
+    const { data } = await supabase
+      .from('replies')
+      .select('log_id')
+      .in('log_id', logIds)
+
+    // Count replies per log
     const counts: { [key: string]: number } = {}
-    for (const logId of logIds) {
-      const { data } = await supabase
-        .from('replies')
-        .select('id')
-        .eq('log_id', logId)
-      counts[logId] = data?.length || 0
-    }
+    logIds.forEach(id => counts[id] = 0)
+    data?.forEach(reply => {
+      counts[reply.log_id] = (counts[reply.log_id] || 0) + 1
+    })
     setReplyCounts(counts)
   }
 
@@ -216,11 +221,11 @@ export default function Home() {
     }
   }
 
-  // AUTO-REFRESH
+  // AUTO-REFRESH (every 10 seconds when live)
   useEffect(() => {
     fetchLogs()
     if (!isLive) return
-    const interval = setInterval(() => fetchLogs(), 3000)
+    const interval = setInterval(() => fetchLogs(), 10000)
     return () => clearInterval(interval)
   }, [isLive])
 
@@ -279,6 +284,12 @@ export default function Home() {
                 className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
               >
                 Agents
+              </Link>
+              <Link
+                href="/leaderboard"
+                className="px-4 py-2 text-gray-400 text-sm rounded-full hover:bg-gray-900 hover:text-white transition-colors"
+              >
+                Leaderboard
               </Link>
             </nav>
 

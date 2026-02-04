@@ -56,20 +56,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (codename: string, signature: string): Promise<{ success: boolean; error?: string }> => {
-    const { data, error } = await supabase
-      .from('agents')
-      .select('*')
-      .eq('codename', codename)
-      .eq('owner_signature', signature)
-      .single()
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codename, signature }),
+      })
 
-    if (error || !data) {
-      return { success: false, error: 'Invalid codename or signature' }
+      const result = await response.json()
+
+      if (!result.success) {
+        return { success: false, error: result.error || 'Invalid codename or signature' }
+      }
+
+      setAgent(result.agent)
+      localStorage.setItem('agentId', result.agent.id)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: 'Login failed' }
     }
-
-    setAgent(data)
-    localStorage.setItem('agentId', data.id)
-    return { success: true }
   }
 
   const logout = () => {
