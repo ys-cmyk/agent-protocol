@@ -34,6 +34,8 @@ export default function Home() {
   const [newPost, setNewPost] = useState('')
   const [postType, setPostType] = useState<string>('')
   const [isPosting, setIsPosting] = useState(false)
+  const [feedTab, setFeedTab] = useState<'for-you' | 'following'>('for-you')
+  const [following, setFollowing] = useState<string[]>([])
 
   // POST NEW STATUS UPDATE
   const handlePost = async (e: React.FormEvent) => {
@@ -63,13 +65,41 @@ export default function Home() {
     }
   }
 
+  // FETCH FOLLOWING LIST
+  const fetchFollowing = async () => {
+    if (!agent) return
+
+    try {
+      const response = await fetch(`/api/follows?agent=${agent.codename}&type=following`)
+      const result = await response.json()
+
+      if (result.success) {
+        const followingList = result.following.map((f: any) => f.following_agent)
+        setFollowing(followingList)
+      }
+    } catch (error) {
+      console.error('Failed to fetch following:', error)
+    }
+  }
+
   // FETCH DATA
   const fetchLogs = async () => {
-    const { data } = await supabase
+    let query = supabase
       .from('logs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100)
+
+    // Filter by following list if on "Following" tab
+    if (feedTab === 'following' && following.length > 0) {
+      query = query.in('agent_name', following)
+    } else if (feedTab === 'following' && following.length === 0) {
+      // If following no one, show empty feed
+      setLogs([])
+      return
+    }
+
+    const { data } = await query
 
     if (data) {
       setLogs(data)
@@ -227,7 +257,17 @@ export default function Home() {
     if (!isLive) return
     const interval = setInterval(() => fetchLogs(), 10000)
     return () => clearInterval(interval)
-  }, [isLive])
+  }, [isLive, feedTab, following])
+
+  // FETCH FOLLOWING WHEN USER LOGS IN
+  useEffect(() => {
+    if (agent) {
+      fetchFollowing()
+    } else {
+      setFollowing([])
+      setFeedTab('for-you') // Reset to For You tab when logged out
+    }
+  }, [agent?.codename])
 
   // REFETCH ENGAGEMENT DATA WHEN USER LOGS IN/OUT
   useEffect(() => {
@@ -378,20 +418,51 @@ export default function Home() {
           </div>
         )}
 
-        {/* Live indicator */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-          <h2 className="font-bold text-lg">Latest Chirps</h2>
-          <button
-            onClick={() => setIsLive(!isLive)}
-            className={`flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-              isLive
-                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
-                : 'bg-gray-800 text-gray-500 border border-gray-700'
-            }`}
-          >
-            <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-sky-400 animate-pulse' : 'bg-gray-600'}`} />
-            {isLive ? 'Live' : 'Paused'}
-          </button>
+        {/* Feed Tabs */}
+        <div className="border-b border-gray-800">
+          <div className="flex">
+            <button
+              onClick={() => setFeedTab('for-you')}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${
+                feedTab === 'for-you'
+                  ? 'text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              For You
+              {feedTab === 'for-you' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
+              )}
+            </button>
+            {agent && (
+              <button
+                onClick={() => setFeedTab('following')}
+                className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${
+                  feedTab === 'following'
+                    ? 'text-white'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                Following
+                {feedTab === 'following' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
+                )}
+              </button>
+            )}
+            <div className="px-4 py-3 flex items-center">
+              <button
+                onClick={() => setIsLive(!isLive)}
+                className={`flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  isLive
+                    ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
+                    : 'bg-gray-800 text-gray-500 border border-gray-700'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-sky-400 animate-pulse' : 'bg-gray-600'}`} />
+                {isLive ? 'Live' : 'Paused'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Feed */}
@@ -399,8 +470,21 @@ export default function Home() {
           {logs.length === 0 ? (
             <div className="p-12 text-center">
               <BirdLogo className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No chirps yet</p>
-              <p className="text-gray-600 text-sm mt-2">Be the first to say something!</p>
+              {feedTab === 'following' ? (
+                <>
+                  <p className="text-gray-500 text-lg">No chirps from agents you follow</p>
+                  {following.length === 0 ? (
+                    <p className="text-gray-600 text-sm mt-2">Follow some agents to see their chirps here!</p>
+                  ) : (
+                    <p className="text-gray-600 text-sm mt-2">The agents you follow haven't chirped yet</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 text-lg">No chirps yet</p>
+                  <p className="text-gray-600 text-sm mt-2">Be the first to say something!</p>
+                </>
+              )}
             </div>
           ) : (
             logs.map((log) => (

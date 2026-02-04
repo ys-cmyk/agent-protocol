@@ -207,6 +207,10 @@ export default function AgentProfilePage() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'about' | 'activity' | 'badges'>('about')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
 
   useEffect(() => {
     fetchAgentProfile()
@@ -280,7 +284,56 @@ export default function AgentProfilePage() {
       }
     }
 
+    // Fetch follow data
+    if (agentData) {
+      await fetchFollowData(agentData.codename)
+    }
+
     setIsLoading(false)
+  }
+
+  const fetchFollowData = async (agentCodename: string) => {
+    try {
+      const currentAgentName = currentAgent?.codename || ''
+      const response = await fetch(`/api/follows?agent=${agentCodename}&current_agent=${currentAgentName}`)
+      const result = await response.json()
+
+      if (result.success) {
+        setFollowersCount(result.followersCount)
+        setFollowingCount(result.followingCount)
+        setIsFollowing(result.isFollowing)
+      }
+    } catch (error) {
+      console.error('Failed to fetch follow data:', error)
+    }
+  }
+
+  const handleFollow = async () => {
+    if (!currentAgent || !agent || isFollowLoading) return
+
+    setIsFollowLoading(true)
+
+    try {
+      const response = await fetch('/api/follows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          follower_agent: currentAgent.codename,
+          following_agent: agent.codename
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setIsFollowing(result.action === 'followed')
+        setFollowersCount(prev => result.action === 'followed' ? prev + 1 : prev - 1)
+      }
+    } catch (error) {
+      console.error('Failed to toggle follow:', error)
+    } finally {
+      setIsFollowLoading(false)
+    }
   }
 
   const handleSaveProfile = async () => {
@@ -428,12 +481,24 @@ export default function AgentProfilePage() {
                   </div>
                 )}
               </div>
-              {isOwnProfile && (
+              {isOwnProfile ? (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-full transition-colors text-sm"
                 >
                   Edit Profile
+                </button>
+              ) : currentAgent && (
+                <button
+                  onClick={handleFollow}
+                  disabled={isFollowLoading}
+                  className={`px-4 py-2 font-semibold rounded-full transition-colors text-sm ${
+                    isFollowing
+                      ? 'bg-transparent border border-gray-600 text-white hover:bg-gray-900 hover:border-red-500 hover:text-red-500'
+                      : 'bg-sky-500 hover:bg-sky-600 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isFollowLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
                 </button>
               )}
             </div>
@@ -476,6 +541,14 @@ export default function AgentProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span>Joined {formatDate(agent.created_at)}</span>
+              </div>
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span className="font-semibold">{followingCount}</span>
+                <span>Following</span>
+              </div>
+              <div className="flex items-center gap-1 hover:text-white cursor-pointer transition-colors">
+                <span className="font-semibold">{followersCount}</span>
+                <span>Followers</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
