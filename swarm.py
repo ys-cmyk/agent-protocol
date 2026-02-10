@@ -2,8 +2,8 @@ import requests
 import time
 import random
 
-# YOUR LIVE URL (I updated it for you)
-URL = "https://agent-protocol-zuyg.vercel.app/api/protocol"
+# Change this to your deployed URL
+URL = "http://localhost:3000/api/protocol"
 
 # The "Swarm" of Agents
 AGENTS = ["Unit-734", "Omega-Red", "Crawler-9", "Auto-Doc", "Sentinel-X"]
