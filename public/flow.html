@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avo — Clinical Intelligence in the EHR: Now Agentic</title>
+<style>
+  :root{
+    --bg:#F5F0EB;
+    --card:#FFFFFF;
+    --dark:#0D2B2A;
+    --ink:#1A1A1A;
+    --ink-dim:#666666;
+    --teal:#0E9A70;
+    --teal-light:#3EC58E;
+    --teal-dark:#1B6B53;
+    --green:#10B994;
+    --edge:rgba(13,43,42,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 50% -8%, rgba(14,154,112,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Geist',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-weight:300;
+    min-height:100vh;
+    display:flex;justify-content:center;
+    padding:52px 20px 72px;
+  }
+  .stage{width:100%;max-width:880px}
+
+  /* ---------- header ---------- */
+  .eyebrow{
+    font-size:11px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--teal);text-align:center;margin-bottom:14px;
+  }
+  h1{
+    font-weight:600;font-size:clamp(25px,4.6vw,38px);line-height:1.18;
+    text-align:center;letter-spacing:-.01em;color:var(--dark);
+  }
+  h1 .accent{color:var(--teal)}
+  .sub{
+    text-align:center;color:var(--ink-dim);font-size:clamp(14px,2vw,16px);
+    margin-top:12px;max-width:560px;margin-left:auto;margin-right:auto;line-height:1.55;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;justify-content:center;gap:8px;margin-top:32px}
+  .tab{
+    font-family:inherit;font-size:13.5px;font-weight:600;letter-spacing:.02em;
+    padding:9px 20px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--edge);background:var(--card);color:var(--ink-dim);
+    transition:all .25s ease;
+  }
+  .tab.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+  .view{display:none}
+  .view.on{display:block;animation:fadein .5s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- flow spine ---------- */
+  .flow{margin-top:36px;display:flex;flex-direction:column;align-items:center}
+
+  .node{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--edge);
+    border-radius:16px;
+    box-shadow:0 2px 14px rgba(13,43,42,.05);
+    position:relative;
+  }
+  .node-label{
+    font-size:10px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--teal);
+  }
+
+  /* ---- stage 1 : patient data ---- */
+  .n-data{max-width:560px;padding:22px 26px;display:flex;flex-direction:column;gap:12px}
+  .n-data .row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .n-data h2{font-size:19px;font-weight:600;color:var(--dark)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    font-size:12px;color:var(--ink-dim);
+    border:1px solid var(--edge);border-radius:999px;background:var(--bg);
+    padding:4px 12px;white-space:nowrap;
+  }
+  .side-branch{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;color:var(--teal-dark);font-weight:400;
+  }
+  .side-branch::before{content:"";display:inline-block;width:22px;height:1px;background:var(--teal)}
+
+  /* ---- connectors ---- */
+  .connector{
+    position:relative;height:96px;width:2px;
+    background:linear-gradient(180deg, rgba(14,154,112,.15), rgba(14,154,112,.5), rgba(14,154,112,.15));
+    margin:0 auto;
+  }
+  .connector .pulse{
+    position:absolute;left:50%;top:-6px;width:7px;height:7px;border-radius:50%;
+    background:var(--teal);transform:translateX(-50%);
+    box-shadow:0 0 8px 2px rgba(14,154,112,.4);
+    animation:drop 2.6s linear infinite;
+  }
+  .connector .pulse:nth-child(2){animation-delay:.9s}
+  .connector .pulse:nth-child(3){animation-delay:1.8s}
+  @keyframes drop{
+    0%{top:-6px;opacity:0}
+    12%{opacity:1}
+    88%{opacity:1}
+    100%{top:calc(100% - 1px);opacity:0}
+  }
+  .conn-tags{
+    position:absolute;left:18px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:5px;width:max-content;
+  }
+  .conn-tags span{font-size:12px;color:var(--ink-dim)}
+  .conn-tags span::before{content:"·";color:var(--teal);margin-right:7px}
+
+  /* ---- stage 2 : intelligence layer ---- */
+  .n-brain{padding:30px 32px 28px;border-color:rgba(14,154,112,.3);
+    box-shadow:0 4px 26px rgba(14,154,112,.10);
+  }
+  .n-brain .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .n-brain h2{font-size:clamp(20px,3vw,26px);font-weight:600;color:var(--dark)}
+  .brain-grid{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:center;margin-top:18px}
+  @media(max-width:640px){.brain-grid{grid-template-columns:1fr}}
+
+  .brainwrap{display:flex;justify-content:center}
+  .brain-edge{stroke:rgba(14,154,112,.3);stroke-width:1}
+  .brain-node{fill:var(--teal-light);animation:nodepulse 3s ease-in-out infinite}
+  .brain-node.big{fill:var(--teal)}
+  @keyframes nodepulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+  .q-label{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#999;margin-bottom:10px}
+  .q-box{min-height:64px;position:relative}
+  .q{
+    position:absolute;inset:0;
+    font-size:clamp(16px,2.4vw,19px);line-height:1.4;font-weight:400;color:var(--dark);
+    opacity:0;transform:translateY(8px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .q.on{opacity:1;transform:translateY(0)}
+  .q::before{content:"“";color:var(--teal)}
+  .q::after{content:"”";color:var(--teal)}
+
+  .grounding{margin-top:22px;padding-top:18px;border-top:1px solid var(--edge)}
+  .ground-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .gchip{
+    font-size:12px;padding:5px 13px;border-radius:999px;
+    color:var(--teal-dark);border:1px solid rgba(14,154,112,.35);
+    background:rgba(14,154,112,.05);white-space:nowrap;font-weight:400;
+  }
+
+  /* ---- stage 3 : single output ---- */
+  .n-out{max-width:640px;padding:26px 30px;border-color:rgba(14,154,112,.3);text-align:center}
+  .n-out h2{font-size:clamp(19px,3vw,24px);font-weight:600;color:var(--dark);margin-top:4px}
+  .n-out h2 .accent{color:var(--teal)}
+  .n-out .paren{font-size:14px;color:var(--ink-dim);margin-top:8px;line-height:1.55}
+  .n-out .pend{
+    display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+    font-size:12.5px;font-weight:600;color:var(--teal-dark);
+    background:rgba(14,154,112,.07);border:1px solid rgba(14,154,112,.3);
+    border-radius:999px;padding:7px 16px;
+  }
+  .pend .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:nodepulse 2s ease-in-out infinite}
+
+  /* ---- hospitalist example ---- */
+  .ex-note{
+    text-align:center;font-size:13px;color:var(--ink-dim);margin-top:34px;margin-bottom:-8px;
+  }
+  .n-pt{max-width:620px;padding:22px 26px}
+  .n-pt h2{font-size:17px;font-weight:600;color:var(--dark);margin-top:2px;margin-bottom:8px}
+  .n-pt p{font-size:14px;line-height:1.6;color:var(--ink-dim)}
+  .n-pt p b{color:var(--ink);font-weight:600}
+
+  .n-reason{padding:26px 30px;border-color:rgba(14,154,112,.3);box-shadow:0 4px 26px rgba(14,154,112,.10)}
+  .n-reason .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .n-reason h2{font-size:20px;font-weight:600;color:var(--dark)}
+  .findings{display:flex;flex-direction:column;gap:0}
+  .finding{
+    display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:baseline;
+    padding:13px 0;border-top:1px solid var(--edge);
+    opacity:0;transform:translateY(6px);transition:opacity .6s ease, transform .6s ease;
+  }
+  .finding.show{opacity:1;transform:none}
+  .finding:first-child{border-top:none}
+  .ftag{
+    font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--teal-dark);
+  }
+  .finding p{font-size:14.5px;line-height:1.55;color:var(--ink)}
+  .finding p b{font-weight:600;color:var(--dark)}
+  @media(max-width:560px){.finding{grid-template-columns:1fr;gap:4px}}
+
+  /* ---- footer line ---- */
+  .closer{
+    margin-top:44px;text-align:center;color:var(--ink-dim);font-size:14px;line-height:1.6;
+  }
+  .closer strong{color:var(--dark);font-weight:600}
+  .closer .tagline{display:block;margin-top:8px;color:var(--teal);font-size:13px;letter-spacing:.04em}
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse,.brain-node,.pend .dot{animation:none}
+    .q,.finding{transition:none}
+    .finding{opacity:1;transform:none}
+  }
+  @media(max-width:640px){
+    .conn-tags{display:none}
+    .connector{height:68px}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="eyebrow">The Avo Platform</div>
+  <h1>Clinical intelligence in the EHR:<br><span class="accent">now agentic</span></h1>
+  <p class="sub">Avo reads the chart, reasons over trusted clinical knowledge, and produces the documentation — drafted, pended, and ready for the clinician to sign.</p>
+
+  <div class="tabs">
+    <button class="tab on" data-view="flow">How it works</button>
+    <button class="tab" data-view="example">A hospitalist's morning</button>
+  </div>
+
+  <!-- ================= VIEW 1 : THE FLOW ================= -->
+  <div class="view on" id="view-flow">
+  <div class="flow">
+
+    <div class="node n-data">
+      <div class="row">
+        <div>
+          <div class="node-label">Input</div>
+          <h2>Patient data</h2>
+        </div>
+        <div class="side-branch">Instant chart summary</div>
+      </div>
+      <div class="chips">
+        <span class="chip">Notes</span>
+        <span class="chip">Labs</span>
+        <span class="chip">Meds</span>
+        <span class="chip">Vitals</span>
+        <span class="chip">Imaging</span>
+        <span class="chip">Prior encounters</span>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="pulse"></div><div class="pulse"></div><div class="pulse"></div>
+      <div class="conn-tags">
+        <span>Identify gaps</span>
+        <span>Confirm differential</span>
+        <span>Treatment plan</span>
+      </div>
+    </div>
+
+    <div class="node n-brain">
+      <div class="head">
+        <h2>Ask Avo</h2>
+        <div class="node-label">The intelligence layer</div>
+      </div>
+      <div class="brain-grid">
+        <div class="brainwrap">
+          <svg width="210" height="190" viewBox="0 0 210 190" aria-hidden="true">
+            <g class="brain-edge">
+              <line x1="105" y1="95" x2="55" y2="50"/>
+              <line x1="105" y1="95" x2="150" y2="42"/>
+              <line x1="105" y1="95" x2="40" y2="110"/>
+              <line x1="105" y1="95" x2="168" y2="100"/>
+              <line x1="105" y1="95" x2="70" y2="155"/>
+              <line x1="105" y1="95" x2="145" y2="150"/>
+              <line x1="55" y1="50" x2="150" y2="42"/>
+              <line x1="55" y1="50" x2="40" y2="110"/>
+              <line x1="150" y1="42" x2="168" y2="100"/>
+              <line x1="40" y1="110" x2="70" y2="155"/>
+              <line x1="168" y1="100" x2="145" y2="150"/>
+              <line x1="70" y1="155" x2="145" y2="150"/>
+              <line x1="55" y1="50" x2="95" y2="20"/>
+              <line x1="150" y1="42" x2="95" y2="20"/>
+            </g>
+            <circle r="3" fill="#0E9A70">
+              <animateMotion dur="5s" repeatCount="indefinite"
+                path="M105,95 L55,50 L95,20 L150,42 L168,100 L145,150 L70,155 L40,110 Z"/>
+            </circle>
+            <circle class="brain-node big" cx="105" cy="95" r="9"/>
+            <circle class="brain-node" cx="55"  cy="50"  r="5" style="animation-delay:.2s"/>
+            <circle class="brain-node" cx="150" cy="42"  r="5" style="animation-delay:.7s"/>
+            <circle class="brain-node" cx="40"  cy="110" r="4.5" style="animation-delay:1.1s"/>
+            <circle class="brain-node" cx="168" cy="100" r="4.5" style="animation-delay:1.6s"/>
+            <circle class="brain-node" cx="70"  cy="155" r="5" style="animation-delay:2s"/>
+            <circle class="brain-node" cx="145" cy="150" r="5" style="animation-delay:2.4s"/>
+            <circle class="brain-node" cx="95"  cy="20"  r="4" style="animation-delay:2.7s"/>
+          </svg>
+        </div>
+        <div>
+          <div class="q-label">Reasoning over the chart</div>
+          <div class="q-box" id="qbox">
+            <div class="q on">What are the UM gaps in this documentation?</div>
+            <div class="q">What's the next best step for this patient?</div>
+            <div class="q">Is this patient eligible for discharge?</div>
+            <div class="q">Anything missing from this discharge plan?</div>
+          </div>
+          <div class="grounding">
+            <div class="q-label">Grounded in trusted knowledge</div>
+            <div class="ground-chips">
+              <span class="gchip">Clinical decision support</span>
+              <span class="gchip">UM criteria</span>
+              <span class="gchip">Enterprise guidelines</span>
+              <span class="gchip">DynaMed evidence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="pulse"></div><div class="pulse"></div><div class="pulse"></div>
+      <div class="conn-tags">
+        <span>CDI considerations</span>
+        <span>UM review</span>
+        <span>Discharge eligibility</span>
+      </div>
+    </div>
+
+    <div class="node n-out">
+      <div class="node-label">Output</div>
+      <h2>Documentation, <span class="accent">produced</span></h2>
+      <p class="paren">(also orders, summaries, and other actions — staged and ready)</p>
+      <div class="pend"><span class="dot"></span> Pended in the EHR · awaiting clinician sign-off</div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- ================= VIEW 2 : HOSPITALIST EXAMPLE ================= -->
+  <div class="view" id="view-example">
+  <div class="flow">
+
+    <div class="node n-pt">
+      <div class="node-label">7:02 AM · Pre-rounds</div>
+      <h2>Mr. R, 68 — Hospital day 2</h2>
+      <p>Admitted for <b>acute on chronic heart failure exacerbation</b>. Overnight: 2L net negative, weaned to room air, Cr 1.4 → 1.6. Avo has already summarized the chart before the hospitalist opens it.</p>
+    </div>
+
+    <div class="connector">
+      <div class="pulse"></div><div class="pulse"></div><div class="pulse"></div>
+    </div>
+
+    <div class="node n-reason">
+      <div class="head">
+        <h2>Ask Avo</h2>
+        <div class="node-label">Reasons over the chart</div>
+      </div>
+      <div class="findings" id="findings">
+        <div class="finding">
+          <span class="ftag">CDI gap</span>
+          <p>Note says "CHF" — chart supports <b>acute on chronic systolic heart failure</b>. Specificity drafted into the assessment.</p>
+        </div>
+        <div class="finding">
+          <span class="ftag">UM check</span>
+          <p>Documentation supports <b>inpatient status</b> today against criteria. Flagged for reassessment at 48 hours.</p>
+        </div>
+        <div class="finding">
+          <span class="ftag">Next step</span>
+          <p>Continue IV diuresis toward dry weight; Cr bump noted — <b>repeat BMP this afternoon</b> suggested.</p>
+        </div>
+        <div class="finding">
+          <span class="ftag">Discharge</span>
+          <p><b>Not yet eligible</b> — pending transition to oral diuretics and stable renal function. Plan documented.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="pulse"></div><div class="pulse"></div><div class="pulse"></div>
+    </div>
+
+    <div class="node n-out">
+      <div class="node-label">7:04 AM · Output</div>
+      <h2>Progress note, <span class="accent">drafted</span></h2>
+      <p class="paren">CDI-specific diagnosis, updated plan, UM language — plus a BMP order queued.</p>
+      <div class="pend"><span class="dot"></span> Pended in the EHR · the hospitalist reviews, edits, signs</div>
+    </div>
+
+  </div>
+  </div>
+
+  <p class="closer">
+    <strong>The clinician reviews. The clinician signs.</strong> Avo does the work in between.
+    <span class="tagline">Improve care with love, not alerts.</span>
+  </p>
+
+</div>
+
+<script>
+  // tabs
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('view-' + t.dataset.view).classList.add('on');
+    if (t.dataset.view === 'example') playFindings();
+  }));
+
+  // rotating questions
+  const qs = document.querySelectorAll('#qbox .q');
+  let qi = 0;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) {
+    setInterval(() => {
+      qs[qi].classList.remove('on');
+      qi = (qi + 1) % qs.length;
+      qs[qi].classList.add('on');
+    }, 3400);
+  }
+
+  // staggered reveal of hospitalist findings
+  function playFindings(){
+    const fs = document.querySelectorAll('#findings .finding');
+    fs.forEach(f => f.classList.remove('show'));
+    fs.forEach((f, i) => setTimeout(() => f.classList.add('show'), reduce ? 0 : 350 + i * 550));
+  }
+</script>
+</body>
+</html>
