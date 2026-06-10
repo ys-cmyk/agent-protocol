@@ -1,0 +1,27 @@
+name: Verify flow site is live
+
+on:
+  push:
+    branches: [claude/flow-vercel-netlify-deploy-1t0jrk]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check production URL
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /tmp/page.html -w "%{http_code}" https://agent-protocol-eight.vercel.app/flow.html)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ] && grep -q "now agentic" /tmp/page.html; then
+              echo "Flow site is live and serving expected content."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Flow site not reachable after 5 minutes."
+          exit 1
