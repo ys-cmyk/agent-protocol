@@ -172,6 +172,17 @@
   .ex-note{
     text-align:center;font-size:13px;color:var(--ink-dim);margin-top:34px;margin-bottom:-8px;
   }
+  .prio-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    width:100%;max-width:620px;margin-bottom:26px;
+  }
+  @media(max-width:560px){.prio-row{grid-template-columns:1fr}}
+  .prio{
+    background:var(--card);border:1px solid var(--edge);border-radius:14px;
+    padding:14px 18px;box-shadow:0 2px 14px rgba(13,43,42,.05);
+  }
+  .prio p{margin-top:6px;font-size:14px;line-height:1.5;color:var(--ink)}
+  .prio p b{font-weight:600;color:var(--dark)}
   .n-pt{max-width:620px;padding:22px 26px}
   .n-pt h2{font-size:17px;font-weight:600;color:var(--dark);margin-top:2px;margin-bottom:8px}
   .n-pt p{font-size:14px;line-height:1.6;color:var(--ink-dim)}
@@ -339,6 +350,17 @@
   <div class="view" id="view-example">
   <div class="flow">
 
+    <div class="prio-row">
+      <div class="prio">
+        <div class="node-label">The hospitalist</div>
+        <p>“My priority is <b>efficiency</b>.”</p>
+      </div>
+      <div class="prio">
+        <div class="node-label">The health system</div>
+        <p>“My priority is <b>outcomes, compliance, and revenue</b>.”</p>
+      </div>
+    </div>
+
     <div class="node n-pt">
       <div class="node-label">7:02 AM · Pre-rounds</div>
       <h2>Mr. R, 68 — Hospital day 2</h2>
@@ -351,7 +373,7 @@
 
     <div class="node n-reason">
       <div class="head">
-        <h2>Ask Avo</h2>
+        <h2>Intelligence layer</h2>
         <div class="node-label">Reasons over the chart</div>
       </div>
       <div class="findings" id="findings">
